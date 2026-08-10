@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id             String   @id @default(uuid())
+  name           String
+  email          String
+  phone          String
+  status         String
+  verification   String
+  joinedDate     String
+  lastLogin      String
+  bookingsCount  Int
+}
+
+model Property {
+  id             String   @id @default(uuid())
+  title          String
+  ownerId        String
+  ownerName      String
+  type           String
+  location       String
+  price          Float
+  rating         Float
+  status         String
+  imageUrl       String?
+  description    String?
+  bedrooms       Int?
+  bathrooms      Int?
+  maxGuests      Int?
+  amenities      String?  // JSON string
+  hostEmail      String?
+  hostPhone      String?
+}
+
+model Booking {
+  id             String   @id @default(uuid())
+  customerName   String
+  propertyTitle  String
+  vendorName     String
+  checkIn        String
+  checkOut       String
+  amount         Float
+  paymentStatus  String
+  status         String
+}
+
+model Payment {
+  id             String   @id @default(uuid())
+  date           String
+  amount         Float
+  type           String
+  status         String
+  method         String
+  referenceId    String
+  description    String
+}
+
+model Admin {
+  id             String   @id @default(uuid())
+  name           String
+  email          String   @unique
+  role           String
+  avatar         String?
+}
