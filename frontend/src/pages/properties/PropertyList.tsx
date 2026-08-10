@@ -120,11 +120,11 @@ export default function PropertyList() {
     {
       header: 'Property',
       accessor: (row) => (
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           {row.imageUrl ? (
-            <img src={row.imageUrl} alt={row.title} className="w-10 h-10 rounded-lg object-cover bg-gray-100" />
+            <img src={row.imageUrl} alt={row.title} className="w-16 h-12 rounded-lg shadow-sm border border-slate-200 object-cover bg-gray-100 flex-shrink-0" />
           ) : (
-            <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400">
+            <div className="w-16 h-12 rounded-lg shadow-sm border border-slate-200 bg-gray-50 flex flex-shrink-0 items-center justify-center text-gray-400">
               <Home size={20} />
             </div>
           )}
@@ -304,9 +304,9 @@ export default function PropertyList() {
             {/* Header / Image */}
             <div className="flex flex-col sm:flex-row gap-5">
               {viewModal.property.imageUrl ? (
-                <img src={viewModal.property.imageUrl} alt={viewModal.property.title} className="w-full sm:w-48 h-32 object-cover rounded-xl shadow-sm" />
+                <img src={viewModal.property.imageUrl} alt={viewModal.property.title} className="w-full sm:w-64 h-40 object-cover rounded-xl shadow-sm border border-slate-100" />
               ) : (
-                <div className="w-full sm:w-48 h-32 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400">
+                <div className="w-full sm:w-64 h-40 bg-gray-50 rounded-xl border border-slate-100 flex items-center justify-center text-gray-400">
                   <Home size={32} />
                 </div>
               )}
