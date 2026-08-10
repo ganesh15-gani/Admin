@@ -1,4 +1,4 @@
-import { delay } from './apiClient';
+import { delay, API_URL } from './apiClient';
 import { userService } from './userService';
 
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'STAFF' | 'VIEWER';
@@ -22,7 +22,7 @@ export const authService = {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

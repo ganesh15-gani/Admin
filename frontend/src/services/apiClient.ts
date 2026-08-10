@@ -1,4 +1,6 @@
-export const API_URL = 'http://localhost:5000/api';
+export const API_URL = import.meta.env.DEV 
+  ? 'http://localhost:5000/api' 
+  : 'https://stayzen-admin-api.onrender.com/api';
 
 export const fetchApi = async (endpoint: string, options?: RequestInit) => {
   const res = await fetch(`${API_URL}${endpoint}`, {
