@@ -130,6 +130,65 @@ app.put('/api/admins/:id/status', authenticate, authorize('Users', 'Edit'), asyn
   res.json(admin);
 });
 
+// Create Admin
+app.post('/api/admins', authenticate, async (req: AuthRequest, res) => {
+  try {
+    if (req.user?.role?.name !== 'Super Admin') {
+      return res.status(403).json({ error: 'Only Super Admins can create new admins.' });
+    }
+
+    const { name, email, roleName = 'Staff' } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required.' });
+    }
+
+    const role = await prisma.role.findUnique({ where: { name: roleName } });
+    if (!role) {
+      return res.status(400).json({ error: `Role '${roleName}' not found.` });
+    }
+
+    const newAdmin = await prisma.admin.create({
+      data: {
+        name,
+        email,
+        roleId: role.id,
+        status: 'Active',
+        isApproved: true,
+        // password is null by default
+      }
+    });
+
+    res.status(201).json(newAdmin);
+  } catch (err: any) {
+    if (err.code === 'P2002') {
+      return res.status(400).json({ error: 'Email already exists.' });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete Admin
+app.delete('/api/admins/:id', authenticate, async (req: AuthRequest, res) => {
+  try {
+    if (req.user?.role?.name !== 'Super Admin') {
+      return res.status(403).json({ error: 'Only Super Admins can delete admins.' });
+    }
+
+    const targetId = req.params.id;
+    if (req.user.id === targetId) {
+      return res.status(400).json({ error: 'You cannot delete yourself.' });
+    }
+
+    await prisma.admin.delete({
+      where: { id: targetId as string }
+    });
+
+    res.json({ success: true, message: 'Admin deleted successfully.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Super Admin password assignment
 app.put('/api/admins/:id/password', authenticate, async (req: AuthRequest, res) => {
   try {
