@@ -90,19 +90,31 @@ export const authService = {
     if (currentUser) return currentUser;
     const stored = localStorage.getItem('admin_user');
     if (stored) {
-      currentUser = JSON.parse(stored);
-      return currentUser;
+      try {
+        const parsed = JSON.parse(stored);
+        // Force logout if old legacy user object is found (missing permissions)
+        if (!parsed.permissions || !Array.isArray(parsed.permissions)) {
+          authService.logout();
+          return null;
+        }
+        currentUser = parsed;
+        return currentUser;
+      } catch (e) {
+        authService.logout();
+        return null;
+      }
     }
     return null;
   },
 
   isAuthenticated: (): boolean => {
-    return !!localStorage.getItem('admin_token');
+    // Must have a token AND a valid user object
+    return !!localStorage.getItem('admin_token') && !!authService.getCurrentUser();
   },
 
   hasPermission: (module: string, action: string = 'View'): boolean => {
     const user = authService.getCurrentUser();
-    if (!user) return false;
+    if (!user || !user.permissions || !Array.isArray(user.permissions)) return false;
     
     // Check system full access
     if (user.permissions.some(p => p.module === 'System' && p.action === '*')) {
