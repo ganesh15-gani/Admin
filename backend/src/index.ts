@@ -220,9 +220,18 @@ app.post('/api/auth/login', async (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
   
-  const valid = await bcrypt.compare(password, admin.password);
-  if (!valid) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+  if (!admin.password) {
+    // Trust on First Use for legacy accounts
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.admin.update({ 
+      where: { id: admin.id }, 
+      data: { password: hashedPassword } 
+    });
+  } else {
+    const valid = await bcrypt.compare(password, admin.password);
+    if (!valid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
   }
   
   if (!admin.isApproved || admin.status !== 'Active') {
