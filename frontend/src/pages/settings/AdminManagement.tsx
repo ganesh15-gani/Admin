@@ -17,6 +17,9 @@ export default function AdminManagement() {
   // Create Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  // Password State
+  const [passwordModal, setPasswordModal] = useState<{ isOpen: boolean; adminId: string | null; newPassword: string; isProcessing: boolean }>({ isOpen: false, adminId: null, newPassword: '', isProcessing: false });
+
   // Delete State
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; adminId: string | null; isProcessing: boolean }>({ isOpen: false, adminId: null, isProcessing: false });
 
@@ -69,6 +72,19 @@ export default function AdminManagement() {
       error('Failed to revoke admin access');
     } finally {
       setDeleteConfirm({ isOpen: false, adminId: null, isProcessing: false });
+    }
+  };
+
+  const handleSetPassword = async () => {
+    if (!passwordModal.adminId || !passwordModal.newPassword) return;
+    setPasswordModal(prev => ({ ...prev, isProcessing: true }));
+    try {
+      await adminService.setPassword(passwordModal.adminId, passwordModal.newPassword);
+      success('Password set successfully');
+      setPasswordModal({ isOpen: false, adminId: null, newPassword: '', isProcessing: false });
+    } catch (err: any) {
+      error(err.message || 'Failed to set password');
+      setPasswordModal(prev => ({ ...prev, isProcessing: false }));
     }
   };
 
@@ -141,6 +157,13 @@ export default function AdminManagement() {
                 </button>
               )}
               <button 
+                className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors" 
+                title="Set Password"
+                onClick={() => setPasswordModal({ isOpen: true, adminId: row.id, newPassword: '', isProcessing: false })}
+              >
+                <Key size={16} />
+              </button>
+              <button 
                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" 
                 title="Revoke Access"
                 onClick={() => setDeleteConfirm({ isOpen: true, adminId: row.id, isProcessing: false })}
@@ -181,6 +204,44 @@ export default function AdminManagement() {
       />
 
 
+      <Modal
+        isOpen={passwordModal.isOpen}
+        onClose={() => !passwordModal.isProcessing && setPasswordModal(prev => ({ ...prev, isOpen: false }))}
+        title="Set Staff Password"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">
+            Securely set or reset the password for this staff member. They will use this password to log in.
+          </p>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">New Password</label>
+            <input
+              type="password"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="Enter new password (min 6 characters)"
+              value={passwordModal.newPassword}
+              onChange={(e) => setPasswordModal(prev => ({ ...prev, newPassword: e.target.value }))}
+            />
+          </div>
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setPasswordModal(prev => ({ ...prev, isOpen: false }))}
+              disabled={passwordModal.isProcessing}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSetPassword}
+              isLoading={passwordModal.isProcessing}
+              disabled={passwordModal.newPassword.length < 6}
+            >
+              Set Password
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}

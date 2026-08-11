@@ -12,6 +12,13 @@ export const adminService = {
       body: JSON.stringify({ status, isApproved })
     });
   },
+
+  setPassword: async (id: string, newPassword: string): Promise<void> => {
+    await fetchApi(`/admins/${id}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ newPassword })
+    });
+  },
   
   // Note: Roles should also be updatable, but for simplicity we will just focus on approve/suspend status for now,
   // or a more complete RBAC role assignment later.

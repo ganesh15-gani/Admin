@@ -130,6 +130,33 @@ app.put('/api/admins/:id/status', authenticate, authorize('Users', 'Edit'), asyn
   res.json(admin);
 });
 
+// Super Admin password assignment
+app.put('/api/admins/:id/password', authenticate, async (req: AuthRequest, res) => {
+  try {
+    // Strictly verify Super Admin
+    if (req.user?.role?.name !== 'Super Admin') {
+      return res.status(403).json({ error: 'Only Super Admins can set passwords for other users.' });
+    }
+
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // We do NOT modify role, status, or permissions. Only the password.
+    const updatedAdmin = await prisma.admin.update({
+      where: { id: req.params.id as string },
+      data: { password: hashedPassword }
+    });
+    
+    res.json({ success: true, message: 'Password set successfully.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Users
 app.get('/api/users', authenticate, authorize('Users', 'View'), async (req, res) => {
   const users = await prisma.user.findMany();
