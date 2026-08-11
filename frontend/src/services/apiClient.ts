@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://stayzen-admin-api.onrender.com';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://stayzen-admin-api.onrender.com';
 export const API_URL = `${API_BASE_URL}/api`;
 export const fetchApi = async (endpoint: string, options?: RequestInit) => {
   try {
