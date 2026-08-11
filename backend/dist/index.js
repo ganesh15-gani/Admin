@@ -233,8 +233,11 @@ app.post('/api/auth/bootstrap', async (req, res) => {
         const { email, newPassword, bootstrapToken } = req.body;
         // 1. Verify bootstrap secret
         const expectedToken = process.env.BOOTSTRAP_SECRET;
-        if (!expectedToken || bootstrapToken !== expectedToken) {
-            return res.status(403).json({ error: 'Invalid or missing bootstrap token.' });
+        if (!expectedToken) {
+            return res.status(403).json({ error: 'Server configuration error: BOOTSTRAP_SECRET environment variable is missing on the server.' });
+        }
+        if (!bootstrapToken || bootstrapToken.trim() !== expectedToken.trim()) {
+            return res.status(403).json({ error: 'Token mismatch. The provided token does not match the server secret. Please verify your token and redeploy.' });
         }
         // 2. Find the existing admin
         const admin = await prisma.admin.findUnique({ where: { email } });
