@@ -151,6 +151,81 @@ app.put('/api/admins/:id/status', auth_1.authenticate, (0, auth_1.authorize)('Us
     });
     res.json(admin);
 });
+// Create Admin
+app.post('/api/admins', auth_1.authenticate, async (req, res) => {
+    try {
+        if (req.user?.role?.name !== 'Super Admin') {
+            return res.status(403).json({ error: 'Only Super Admins can create new admins.' });
+        }
+        const { name, email, roleName = 'Staff' } = req.body;
+        if (!name || !email) {
+            return res.status(400).json({ error: 'Name and email are required.' });
+        }
+        const role = await prisma.role.findUnique({ where: { name: roleName } });
+        if (!role) {
+            return res.status(400).json({ error: `Role '${roleName}' not found.` });
+        }
+        const newAdmin = await prisma.admin.create({
+            data: {
+                name,
+                email,
+                roleId: role.id,
+                status: 'Active',
+                isApproved: true,
+                // password is null by default
+            }
+        });
+        res.status(201).json(newAdmin);
+    }
+    catch (err) {
+        if (err.code === 'P2002') {
+            return res.status(400).json({ error: 'Email already exists.' });
+        }
+        res.status(500).json({ error: err.message });
+    }
+});
+// Delete Admin
+app.delete('/api/admins/:id', auth_1.authenticate, async (req, res) => {
+    try {
+        if (req.user?.role?.name !== 'Super Admin') {
+            return res.status(403).json({ error: 'Only Super Admins can delete admins.' });
+        }
+        const targetId = req.params.id;
+        if (req.user.id === targetId) {
+            return res.status(400).json({ error: 'You cannot delete yourself.' });
+        }
+        await prisma.admin.delete({
+            where: { id: targetId }
+        });
+        res.json({ success: true, message: 'Admin deleted successfully.' });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// Super Admin password assignment
+app.put('/api/admins/:id/password', auth_1.authenticate, async (req, res) => {
+    try {
+        // Strictly verify Super Admin
+        if (req.user?.role?.name !== 'Super Admin') {
+            return res.status(403).json({ error: 'Only Super Admins can set passwords for other users.' });
+        }
+        const { newPassword } = req.body;
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        // We do NOT modify role, status, or permissions. Only the password.
+        const updatedAdmin = await prisma.admin.update({
+            where: { id: req.params.id },
+            data: { password: hashedPassword }
+        });
+        res.json({ success: true, message: 'Password set successfully.' });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // Users
 app.get('/api/users', auth_1.authenticate, (0, auth_1.authorize)('Users', 'View'), async (req, res) => {
     const users = await prisma.user.findMany();
