@@ -2,28 +2,100 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+import * as bcrypt from 'bcryptjs';
+
 // We will read the mock files from the frontend
 async function main() {
   console.log('Clearing database...');
+  await prisma.rolePermission.deleteMany();
+  await prisma.permission.deleteMany();
+  await prisma.role.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.booking.deleteMany();
   await prisma.property.deleteMany();
   await prisma.user.deleteMany();
   await prisma.admin.deleteMany();
 
+  console.log('Seeding Permissions...');
+  const modules = ['Dashboard', 'Users', 'Properties', 'Bookings', 'Payments', 'Settings', 'Vendors', 'Reports', 'CMS', 'Notifications'];
+  const actions = ['View', 'Edit', 'Create', 'Delete'];
+
+  const allPermissions = [];
+  for (const mod of modules) {
+    for (const act of actions) {
+      allPermissions.push(await prisma.permission.create({
+        data: { module: mod, action: act }
+      }));
+    }
+  }
+  // System/Super Admin specific
+  const fullAccess = await prisma.permission.create({ data: { module: 'System', action: '*' } });
+
+  console.log('Seeding Roles...');
+  const superAdminRole = await prisma.role.create({
+    data: {
+      name: 'Super Admin',
+      description: 'Full access to the entire system',
+      permissions: {
+        create: [...allPermissions.map(p => ({ permissionId: p.id })), { permissionId: fullAccess.id }]
+      }
+    }
+  });
+
+  const adminRole = await prisma.role.create({
+    data: {
+      name: 'Admin',
+      description: 'Limited Admin with specific access',
+      permissions: {
+        create: allPermissions
+          .filter(p => p.module === 'Users' || p.module === 'Reports')
+          .map(p => ({ permissionId: p.id }))
+      }
+    }
+  });
+
+  const viewerRole = await prisma.role.create({
+    data: {
+      name: 'Viewer',
+      description: 'Read-only access',
+      permissions: {
+        create: allPermissions
+          .filter(p => p.action === 'View' && (p.module === 'Dashboard' || p.module === 'Reports'))
+          .map(p => ({ permissionId: p.id }))
+      }
+    }
+  });
+
   console.log('Seeding Admins...');
+  const hashedPassword = await bcrypt.hash('admin123', 10);
   await prisma.admin.create({
     data: {
       name: 'Super Admin',
       email: 'admin@stayzen.com',
-      role: 'SUPER_ADMIN',
+      password: hashedPassword,
+      status: 'Active',
+      isApproved: true,
+      roleId: superAdminRole.id
     }
   });
   await prisma.admin.create({
     data: {
       name: 'John Staff',
       email: 'john@stayzen.com',
-      role: 'STAFF',
+      password: hashedPassword,
+      status: 'Active',
+      isApproved: true,
+      roleId: adminRole.id
+    }
+  });
+  await prisma.admin.create({
+    data: {
+      name: 'Jane Viewer',
+      email: 'jane@stayzen.com',
+      password: hashedPassword,
+      status: 'Active',
+      isApproved: true,
+      roleId: viewerRole.id
     }
   });
 

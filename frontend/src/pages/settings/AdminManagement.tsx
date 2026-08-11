@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ShieldCheck, UserPlus, Trash2, Key } from 'lucide-react';
 import { adminService } from '../../services/adminService';
-import { type AuthUser, type UserRole } from '../../services/authService';
+import { type AuthUser } from '../../services/authService';
 import { DataTable, type Column } from '../../components/ui/DataTable';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -14,9 +14,8 @@ export default function AdminManagement() {
   const [loading, setLoading] = useState(true);
   
   // Create Modal State
+  // Create Modal State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: '', email: '', role: 'STAFF' as UserRole });
-  const [isCreating, setIsCreating] = useState(false);
 
   // Delete State
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; adminId: string | null; isProcessing: boolean }>({ isOpen: false, adminId: null, isProcessing: false });
@@ -39,21 +38,23 @@ export default function AdminManagement() {
     loadAdmins();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!createForm.name || !createForm.email) return;
-    
-    setIsCreating(true);
+  const handleApprove = async (id: string) => {
     try {
-      await adminService.createAdmin(createForm.name, createForm.email, createForm.role);
-      success('Admin account created successfully');
-      setIsCreateOpen(false);
-      setCreateForm({ name: '', email: '', role: 'STAFF' });
+      await adminService.updateStatus(id, 'Active', true);
+      success('Admin account approved and activated');
       loadAdmins();
     } catch (err) {
-      error('Failed to create admin');
-    } finally {
-      setIsCreating(false);
+      error('Failed to approve admin');
+    }
+  };
+
+  const handleSuspend = async (id: string) => {
+    try {
+      await adminService.updateStatus(id, 'Suspended', true);
+      success('Admin account suspended');
+      loadAdmins();
+    } catch (err) {
+      error('Failed to suspend admin');
     }
   };
 
@@ -61,11 +62,11 @@ export default function AdminManagement() {
     if (!deleteConfirm.adminId) return;
     setDeleteConfirm(prev => ({ ...prev, isProcessing: true }));
     try {
-      await adminService.deleteAdmin(deleteConfirm.adminId);
-      success('Admin account revoked');
-      setAdmins(prev => prev.filter(a => a.id !== deleteConfirm.adminId));
+      await adminService.updateStatus(deleteConfirm.adminId, 'Rejected', false);
+      success('Admin account access revoked (rejected)');
+      loadAdmins();
     } catch (err) {
-      error('Failed to delete admin');
+      error('Failed to revoke admin access');
     } finally {
       setDeleteConfirm({ isOpen: false, adminId: null, isProcessing: false });
     }
@@ -91,29 +92,62 @@ export default function AdminManagement() {
       ),
     },
     {
-      header: 'Role & Permissions',
-      accessor: (row) => {
-        const variants: any = { SUPER_ADMIN: 'danger', ADMIN: 'success', STAFF: 'info', VIEWER: 'default' };
+      header: 'Role & Status',
+      accessor: (row: any) => {
+        const variants: any = { 'Super Admin': 'danger', 'Admin': 'success', 'Viewer': 'default' };
         return (
-          <div className="flex items-center space-x-2">
-            <Badge variant={variants[row.role]}>{row.role.replace('_', ' ')}</Badge>
-            {row.role === 'SUPER_ADMIN' && <ShieldCheck size={14} className="text-red-500" />}
+          <div className="flex flex-col space-y-1">
+            <div className="flex items-center space-x-2">
+              <Badge variant={variants[row.role?.name || row.role] || 'info'}>{row.role?.name || row.role}</Badge>
+              {row.role?.name === 'Super Admin' && <ShieldCheck size={14} className="text-red-500" />}
+            </div>
+            <div className="text-xs">
+              <span className={`font-medium ${row.status === 'Active' ? 'text-green-600' : row.status === 'Pending' ? 'text-amber-500' : 'text-red-600'}`}>
+                {row.status} {row.isApproved ? '(Approved)' : '(Pending)'}
+              </span>
+            </div>
           </div>
         );
       },
     },
     {
       header: 'Actions',
-      accessor: (row) => (
+      accessor: (row: any) => (
         <div className="flex items-center space-x-2">
-          {row.role !== 'SUPER_ADMIN' && (
-            <button 
-              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" 
-              title="Revoke Access"
-              onClick={() => setDeleteConfirm({ isOpen: true, adminId: row.id, isProcessing: false })}
-            >
-              <Trash2 size={16} />
-            </button>
+          {row.role?.name !== 'Super Admin' && (
+            <>
+              {!row.isApproved && (
+                <button 
+                  className="p-1.5 text-xs text-brand-700 bg-brand-50 hover:bg-brand-100 rounded transition-colors"
+                  onClick={() => handleApprove(row.id)}
+                >
+                  Approve
+                </button>
+              )}
+              {row.isApproved && row.status === 'Active' && (
+                <button 
+                  className="p-1.5 text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 rounded transition-colors"
+                  onClick={() => handleSuspend(row.id)}
+                >
+                  Suspend
+                </button>
+              )}
+              {row.status === 'Suspended' && (
+                <button 
+                  className="p-1.5 text-xs text-green-700 bg-green-50 hover:bg-green-100 rounded transition-colors"
+                  onClick={() => handleApprove(row.id)}
+                >
+                  Reactivate
+                </button>
+              )}
+              <button 
+                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" 
+                title="Revoke Access"
+                onClick={() => setDeleteConfirm({ isOpen: true, adminId: row.id, isProcessing: false })}
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
           )}
         </div>
       ),
@@ -130,9 +164,11 @@ export default function AdminManagement() {
           <p className="text-sm text-slate-500 mt-1">Manage admin roles, staff accounts, and system permissions.</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="primary" size="sm" onClick={() => setIsCreateOpen(true)}>
+          <Button variant="primary" size="sm" onClick={() => {
+            error('New admins must self-register first and wait for approval.');
+          }}>
             <UserPlus size={16} className="mr-2" />
-            Add Staff Member
+            Invite Staff
           </Button>
         </div>
       </div>
@@ -144,46 +180,7 @@ export default function AdminManagement() {
         isLoading={loading}
       />
 
-      <Modal isOpen={isCreateOpen} onClose={() => !isCreating && setIsCreateOpen(false)} title="Add Staff Member">
-        <form onSubmit={handleCreate} className="space-y-4 pt-2">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-            <input
-              type="text"
-              required
-              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-shadow"
-              value={createForm.name}
-              onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-            <input
-              type="email"
-              required
-              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-shadow"
-              value={createForm.email}
-              onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-            <select
-              className="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-shadow bg-white"
-              value={createForm.role}
-              onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as UserRole })}
-            >
-              <option value="ADMIN">Administrator (Full Access except billing)</option>
-              <option value="STAFF">Staff (Manage Bookings & Users)</option>
-              <option value="VIEWER">Viewer (Read-only access)</option>
-            </select>
-          </div>
-          <div className="pt-4 flex justify-end space-x-3">
-            <Button variant="ghost" type="button" onClick={() => setIsCreateOpen(false)} disabled={isCreating}>Cancel</Button>
-            <Button variant="primary" type="submit" isLoading={isCreating}>Create Account</Button>
-          </div>
-        </form>
-      </Modal>
+
 
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}

@@ -1,26 +1,26 @@
-import { delay, API_URL } from './apiClient';
-import { userService } from './userService';
+import { fetchApi, API_URL } from './apiClient';
 
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'STAFF' | 'VIEWER';
+export interface Permission {
+  id: string;
+  module: string;
+  action: string;
+}
 
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: string;
+  status: string;
+  isApproved: boolean;
   avatar?: string;
+  permissions: Permission[];
 }
 
-// Mock initial state
 let currentUser: AuthUser | null = null;
-const MOCK_TOKEN = 'mock-jwt-token-stayzen-admin-xyz';
 
 export const authService = {
-  login: async (email: string, password: string):Promise<{ user: AuthUser, token: string }> => {
-    if (password.length < 4) {
-      throw new Error('Password must be at least 4 characters');
-    }
-
+  login: async (email: string, password: string): Promise<{ user: AuthUser, token: string }> => {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
@@ -28,9 +28,10 @@ export const authService = {
         body: JSON.stringify({ email, password })
       });
       
-      if (!response.ok) throw new Error('Invalid credentials');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Login failed');
       
-      const { user, token } = await response.json();
+      const { user, token } = data;
 
       currentUser = user;
       localStorage.setItem('admin_token', token);
@@ -42,67 +43,51 @@ export const authService = {
     }
   },
 
-  register: async (name: string, email: string, password: string):Promise<{ user: AuthUser, token: string }> => {
-    await delay(1200);
-    
-    if (password.length < 4) {
-      throw new Error('Password must be at least 4 characters');
+  register: async (name: string, email: string, password: string): Promise<{ success: boolean, message: string }> => {
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Registration failed');
+      
+      return data;
+    } catch (err) {
+      throw err;
     }
-
-    const newId = `admin-${Date.now()}`;
-    const user: AuthUser = {
-      id: newId,
-      name: name,
-      email: email,
-      role: 'ADMIN',
-    };
-
-    // Inject into the User table to make it "Live"
-    userService.addUser({
-      id: newId,
-      name: name,
-      email: email,
-      phone: '+1 (555) 000-0000',
-      status: 'Active',
-      verification: 'Verified',
-      joinedDate: new Date().toISOString().split('T')[0],
-      lastLogin: 'Just now',
-      bookingsCount: 0
-    });
-
-    currentUser = user;
-    localStorage.setItem('admin_token', MOCK_TOKEN);
-    localStorage.setItem('admin_user', JSON.stringify(user));
-    
-    return { user, token: MOCK_TOKEN };
   },
 
   logout: async (): Promise<void> => {
-    await delay(400);
     currentUser = null;
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
   },
 
-  updateProfile: async (name: string, avatarBase64?: string): Promise<AuthUser> => {
-    await delay(800);
-    if (!currentUser) throw new Error('Not authenticated');
+  fetchCurrentUser: async (): Promise<AuthUser | null> => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return null;
 
-    const updatedUser = {
-      ...currentUser,
-      name: name,
-      ...(avatarBase64 && { avatar: avatarBase64 })
-    };
-
-    currentUser = updatedUser;
-    localStorage.setItem('admin_user', JSON.stringify(updatedUser));
-    
-    return updatedUser;
+    try {
+      const data = await fetchApi('/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      currentUser = data.user;
+      localStorage.setItem('admin_user', JSON.stringify(currentUser));
+      return currentUser;
+    } catch (error) {
+      // Token invalid or expired
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+      currentUser = null;
+      return null;
+    }
   },
 
   getCurrentUser: (): AuthUser | null => {
     if (currentUser) return currentUser;
-    
     const stored = localStorage.getItem('admin_user');
     if (stored) {
       currentUser = JSON.parse(stored);
@@ -113,5 +98,18 @@ export const authService = {
 
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem('admin_token');
+  },
+
+  hasPermission: (module: string, action: string = 'View'): boolean => {
+    const user = authService.getCurrentUser();
+    if (!user) return false;
+    
+    // Check system full access
+    if (user.permissions.some(p => p.module === 'System' && p.action === '*')) {
+      return true;
+    }
+    
+    // Check specific permission
+    return user.permissions.some(p => p.module === module && (p.action === action || p.action === '*'));
   }
 };

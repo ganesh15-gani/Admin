@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { authService } from '../../services/authService';
 import { 
   LayoutDashboard, 
   Users, 
@@ -27,21 +28,21 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Users', path: '/users', icon: Users },
-  { name: 'Roommate Matches', path: '/users/roommates', icon: Users },
-  { name: 'Properties', path: '/properties', icon: Home },
-  { name: 'Bookings', path: '/bookings', icon: Calendar },
-  { name: 'Payments', path: '/payments', icon: CreditCard },
-  { name: 'Vendors', path: '/vendors', icon: Store },
-  { name: 'Bank Approvals', path: '/vendors/banks', icon: Store },
-  { name: 'Support', path: '/support', icon: LifeBuoy },
-  { name: 'Notifications', path: '/notifications', icon: Bell },
-  { name: 'Reports', path: '/reports', icon: BarChart },
-  { name: 'CMS', path: '/cms', icon: FileText },
-  { name: 'Settings', path: '/settings', icon: Settings },
-  { name: 'Super Admin', path: '/super-admin', icon: ShieldCheck },
-  { name: 'System', path: '/system', icon: Activity },
+  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, module: 'Dashboard' },
+  { name: 'Users', path: '/users', icon: Users, module: 'Users' },
+  { name: 'Roommate Matches', path: '/users/roommates', icon: Users, module: 'Users' },
+  { name: 'Properties', path: '/properties', icon: Home, module: 'Properties' },
+  { name: 'Bookings', path: '/bookings', icon: Calendar, module: 'Bookings' },
+  { name: 'Payments', path: '/payments', icon: CreditCard, module: 'Payments' },
+  { name: 'Vendors', path: '/vendors', icon: Store, module: 'Vendors' },
+  { name: 'Bank Approvals', path: '/vendors/banks', icon: Store, module: 'Vendors' },
+  { name: 'Support', path: '/support', icon: LifeBuoy, module: 'Support' },
+  { name: 'Notifications', path: '/notifications', icon: Bell, module: 'Notifications' },
+  { name: 'Reports', path: '/reports', icon: BarChart, module: 'Reports' },
+  { name: 'CMS', path: '/cms', icon: FileText, module: 'CMS' },
+  { name: 'Settings', path: '/settings', icon: Settings, module: 'Settings' },
+  { name: 'Super Admin', path: '/super-admin', icon: ShieldCheck, module: 'System' },
+  { name: 'System', path: '/system', icon: Activity, module: 'System' },
 ];
 
 export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps) {
@@ -89,7 +90,7 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
 
       <div className="flex-1 overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-gray-300">
         <nav className="space-y-1 px-2">
-          {navItems.map((item) => (
+          {navItems.filter(item => authService.hasPermission(item.module)).map((item) => (
             <NavLink
               key={item.name}
               to={item.path}

@@ -12,221 +12,256 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+import { execSync } from 'child_process';
+import * as bcrypt from 'bcryptjs';
+
 app.get('/api/seed-db', async (req, res) => {
   try {
+    console.log('Running prisma db push...');
+    execSync('npx prisma db push', { stdio: 'inherit' });
+    
+    console.log('Clearing database...');
+    await prisma.rolePermission.deleteMany();
+    await prisma.permission.deleteMany();
+    await prisma.role.deleteMany();
+    await prisma.payment.deleteMany();
+    await prisma.booking.deleteMany();
     await prisma.property.deleteMany();
     await prisma.user.deleteMany();
-    
-    const u1 = await prisma.user.create({
-      data: {
-        name: 'Sarah Jenkins',
-        email: 'sarah.j@example.com',
-        phone: '+1 234-567-8901',
-        status: 'Active',
-        verification: 'Verified',
-        joinedDate: '2023-01-15',
-        lastLogin: '2024-04-20',
-        bookingsCount: 12
+    await prisma.admin.deleteMany();
+
+    console.log('Seeding Permissions...');
+    const modules = ['Dashboard', 'Users', 'Properties', 'Bookings', 'Payments', 'Settings', 'Vendors', 'Reports', 'CMS', 'Notifications', 'System'];
+    const actions = ['View', 'Edit', 'Create', 'Delete'];
+
+    const allPermissions = [];
+    for (const mod of modules) {
+      for (const act of actions) {
+        allPermissions.push(await prisma.permission.create({
+          data: { module: mod, action: act }
+        }));
       }
-    });
-    
-    const u2 = await prisma.user.create({
+    }
+    const fullAccess = await prisma.permission.create({ data: { module: 'System', action: '*' } });
+
+    console.log('Seeding Roles...');
+    const superAdminRole = await prisma.role.create({
       data: {
-        name: 'Michael Chen',
-        email: 'm.chen@example.com',
-        phone: '+1 234-567-8902',
-        status: 'Active',
-        verification: 'Pending',
-        joinedDate: '2024-02-10',
-        lastLogin: '2024-04-18',
-        bookingsCount: 3
+        name: 'Super Admin',
+        description: 'Full access to the entire system',
+        permissions: {
+          create: [...allPermissions.map(p => ({ permissionId: p.id })), { permissionId: fullAccess.id }]
+        }
       }
     });
 
-    await prisma.property.create({
+    const adminRole = await prisma.role.create({
       data: {
-        title: 'Luxury Villa with Ocean View',
-        ownerId: u1.id,
-        ownerName: 'Sarah Jenkins',
-        type: 'Villa',
-        location: 'Bali, Indonesia',
-        price: 450,
-        rating: 4.9,
-        status: 'Approved',
-        description: 'A beautiful luxury villa with a private infinity pool overlooking the ocean.',
-        bedrooms: 4,
-        bathrooms: 3,
-        maxGuests: 8,
-        amenities: JSON.stringify(['Pool', 'WiFi', 'Kitchen', 'Air Conditioning', 'Ocean View']),
-        hostEmail: 'sarah.j@example.com',
-        hostPhone: '+1 234-567-8901',
-        imageUrl: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'
+        name: 'Admin',
+        description: 'Limited Admin with specific access',
+        permissions: {
+          create: allPermissions
+            .filter(p => p.module === 'Users' || p.module === 'Reports')
+            .map(p => ({ permissionId: p.id }))
+        }
       }
     });
-    await prisma.property.create({
+
+    const viewerRole = await prisma.role.create({
       data: {
-        title: 'Downtown Studio Apartment',
-        ownerId: u2.id,
-        ownerName: 'Michael Chen',
-        type: 'Apartment',
-        location: 'New York, USA',
-        price: 120,
-        rating: 4.7,
-        status: 'Pending',
-        description: 'A cozy downtown studio in the heart of the city.',
-        bedrooms: 1,
-        bathrooms: 1,
-        maxGuests: 2,
-        amenities: JSON.stringify(['WiFi', 'AC', 'Kitchenette']),
-        hostEmail: 'm.chen@example.com',
-        hostPhone: '+1 234-567-8902',
-        imageUrl: 'https://images.unsplash.com/photo-1502672260266-1c1c24226133?ixlib=rb-4.0.3&auto=format&fit=crop&w=1374&q=80'
+        name: 'Viewer',
+        description: 'Read-only access',
+        permissions: {
+          create: allPermissions
+            .filter(p => p.action === 'View' && (p.module === 'Dashboard' || p.module === 'Reports'))
+            .map(p => ({ permissionId: p.id }))
+        }
       }
     });
-    await prisma.property.create({
+
+    console.log('Seeding Admins...');
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const u1 = await prisma.admin.create({
       data: {
-        title: 'Rustic Cabin in the Woods',
-        ownerId: u1.id,
-        ownerName: 'Sarah Jenkins',
-        type: 'Cabin',
-        location: 'Aspen, Colorado',
-        price: 250,
-        rating: 4.8,
-        status: 'Approved',
-        description: 'Escape to nature in this beautiful A-frame cabin.',
-        bedrooms: 2,
-        bathrooms: 1,
-        maxGuests: 4,
-        amenities: JSON.stringify(['Fireplace', 'Hot Tub', 'WiFi']),
-        hostEmail: 'sarah.j@example.com',
-        hostPhone: '+1 234-567-8901',
-        imageUrl: 'https://images.unsplash.com/photo-1449844908441-8829872d2607?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'
+        name: 'Super Admin',
+        email: 'admin@stayzen.com',
+        password: hashedPassword,
+        status: 'Active',
+        isApproved: true,
+        roleId: superAdminRole.id
       }
     });
-    await prisma.property.create({
+    
+    await prisma.admin.create({
       data: {
-        title: 'Modern Santorini Cave House',
-        ownerId: u2.id,
-        ownerName: 'Michael Chen',
-        type: 'House',
-        location: 'Santorini, Greece',
-        price: 320,
-        rating: 5.0,
-        status: 'Approved',
-        description: 'Experience traditional Greek architecture with modern luxury.',
-        bedrooms: 2,
-        bathrooms: 2,
-        maxGuests: 4,
-        amenities: JSON.stringify(['Plunge Pool', 'WiFi', 'AC']),
-        hostEmail: 'm.chen@example.com',
-        hostPhone: '+1 234-567-8902',
-        imageUrl: 'https://images.unsplash.com/photo-1601581875039-e899893d520c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1374&q=80'
+        name: 'John Staff',
+        email: 'john@stayzen.com',
+        password: hashedPassword,
+        status: 'Active',
+        isApproved: true,
+        roleId: adminRole.id
       }
     });
-    await prisma.property.create({
-      data: {
-        title: 'Chic Parisian Loft',
-        ownerId: u1.id,
-        ownerName: 'Sarah Jenkins',
-        type: 'Apartment',
-        location: 'Paris, France',
-        price: 180,
-        rating: 4.6,
-        status: 'Pending',
-        description: 'A stylish loft in Le Marais. High ceilings, large windows.',
-        bedrooms: 1,
-        bathrooms: 1,
-        maxGuests: 3,
-        amenities: JSON.stringify(['WiFi', 'Kitchen', 'Balcony']),
-        hostEmail: 'sarah.j@example.com',
-        hostPhone: '+1 234-567-8901',
-        imageUrl: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'
-      }
-    });
-    res.json({ success: true, message: 'Database seeded perfectly!' });
+
+    res.json({ success: true, message: 'Database migrated and seeded perfectly!' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message, stack: err.stack });
   }
 });
 
+import { authenticate, authorize, AuthRequest } from './middleware/auth';
+import jwt from 'jsonwebtoken';
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-dev';
+
+// Admin Management
+app.get('/api/admins', authenticate, authorize('Users', 'View'), async (req, res) => {
+  const admins = await prisma.admin.findMany({
+    include: { role: true }
+  });
+  res.json(admins.map(a => { const { password, ...rest } = a; return rest; }));
+});
+
+app.put('/api/admins/:id/status', authenticate, authorize('Users', 'Edit'), async (req, res) => {
+  const { status, isApproved } = req.body;
+  const admin = await prisma.admin.update({
+    where: { id: req.params.id as string },
+    data: { status, isApproved }
+  });
+  res.json(admin);
+});
+
 // Users
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', authenticate, authorize('Users', 'View'), async (req, res) => {
   const users = await prisma.user.findMany();
   res.json(users);
 });
-app.get('/api/users/:id', async (req, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+app.get('/api/users/:id', authenticate, authorize('Users', 'View'), async (req, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.params.id as string } });
   user ? res.json(user) : res.status(404).json({ error: 'Not found' });
 });
 
 // Properties
-app.get('/api/properties', async (req, res) => {
+app.get('/api/properties', authenticate, authorize('Properties', 'View'), async (req, res) => {
   const properties = await prisma.property.findMany();
   res.json(properties.map(p => ({
     ...p,
     amenities: p.amenities ? JSON.parse(p.amenities) : []
   })));
 });
-app.get('/api/properties/:id', async (req, res) => {
-  const p = await prisma.property.findUnique({ where: { id: req.params.id } });
+app.get('/api/properties/:id', authenticate, authorize('Properties', 'View'), async (req, res) => {
+  const p = await prisma.property.findUnique({ where: { id: req.params.id as string } });
   if (p) {
     res.json({ ...p, amenities: p.amenities ? JSON.parse(p.amenities) : [] });
   } else {
     res.status(404).json({ error: 'Not found' });
   }
 });
-app.put('/api/properties/:id/status', async (req, res) => {
+app.put('/api/properties/:id/status', authenticate, authorize('Properties', 'Edit'), async (req, res) => {
   const { status } = req.body;
   const updated = await prisma.property.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id as string },
     data: { status }
   });
   res.json({ ...updated, amenities: updated.amenities ? JSON.parse(updated.amenities) : [] });
 });
 
 // Bookings
-app.get('/api/bookings', async (req, res) => {
+app.get('/api/bookings', authenticate, authorize('Bookings', 'View'), async (req, res) => {
   const bookings = await prisma.booking.findMany();
   res.json(bookings);
 });
-app.put('/api/bookings/:id/status', async (req, res) => {
+app.put('/api/bookings/:id/status', authenticate, authorize('Bookings', 'Edit'), async (req, res) => {
   const { status } = req.body;
   const updated = await prisma.booking.update({
-    where: { id: req.params.id },
+    where: { id: req.params.id as string },
     data: { status }
   });
   res.json(updated);
 });
 
 // Payments
-app.get('/api/payments', async (req, res) => {
+app.get('/api/payments', authenticate, authorize('Payments', 'View'), async (req, res) => {
   const payments = await prisma.payment.findMany();
   res.json(payments);
 });
 
-// Auth (Simple mock with db check)
+// Auth
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const existing = await prisma.admin.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const admin = await prisma.admin.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        status: 'Pending',
+        isApproved: false
+      }
+    });
+    res.json({ success: true, message: 'Registration successful. Waiting for Super Admin approval.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  const admin = await prisma.admin.findUnique({ where: { email } });
-  if (admin) {
-    res.json({ user: admin, token: 'mock-jwt-token-stayzen-admin-xyz' });
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
+  const admin = await prisma.admin.findUnique({ 
+    where: { email },
+    include: { role: { include: { permissions: { include: { permission: true } } } } }
+  });
+  
+  if (!admin) {
+    return res.status(401).json({ error: 'Invalid credentials' });
   }
+  
+  const valid = await bcrypt.compare(password, admin.password);
+  if (!valid) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  
+  if (!admin.isApproved || admin.status !== 'Active') {
+    return res.status(403).json({ error: admin.status === 'Pending' ? 'Your account is pending approval by the Super Admin.' : 'You are not authorized to access this system.' });
+  }
+
+  await prisma.admin.update({ where: { id: admin.id }, data: { lastLogin: new Date() } });
+  
+  const token = jwt.sign({ id: admin.id }, JWT_SECRET, { expiresIn: '1d' });
+  
+  const userPayload = {
+    id: admin.id,
+    name: admin.name,
+    email: admin.email,
+    role: admin.role?.name || 'Viewer',
+    permissions: admin.role?.permissions.map(rp => rp.permission) || []
+  };
+  
+  res.json({ user: userPayload, token });
+});
+
+app.get('/api/auth/me', authenticate, async (req: AuthRequest, res) => {
+  const admin = req.user;
+  const userPayload = {
+    id: admin.id,
+    name: admin.name,
+    email: admin.email,
+    role: admin.role?.name || 'Viewer',
+    permissions: admin.role?.permissions.map((rp: any) => rp.permission) || []
+  };
+  res.json({ user: userPayload });
 });
 
 // System Health
 app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'StayZen Admin API is running'
-  });
+  res.json({ success: true, message: 'StayZen Admin API is running' });
 });
 app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'StayZen Admin API is running'
-  });
+  res.json({ success: true, message: 'StayZen Admin API is running' });
 });
 
 app.listen(PORT, () => {

@@ -61,11 +61,9 @@ export function ProfileSettingsModal({ isOpen, onClose, onProfileUpdated }: Prof
 
     try {
       setIsLoading(true);
-      const updatedUser = await authService.updateProfile(
-        name, 
-        avatarPreview !== user?.avatar ? avatarPreview! : undefined
-      );
-      
+      // Simulate profile update logic since we removed it from authService temporarily
+      // Ideally, there should be an API call like: await fetchApi('/auth/profile', { method: 'PUT', body: JSON.stringify({ name, avatar }) })
+      const updatedUser = { ...user!, name, avatar: avatarPreview || '' };
       success('Profile updated successfully');
       onProfileUpdated(updatedUser);
       onClose();

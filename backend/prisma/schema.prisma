@@ -66,6 +66,39 @@ model Admin {
   id             String   @id @default(uuid())
   name           String
   email          String   @unique
-  role           String
+  password       String
+  status         String   @default("Pending") // Pending, Active, Suspended, Rejected
+  isApproved     Boolean  @default(false)
   avatar         String?
+  roleId         String?
+  role           Role?    @relation(fields: [roleId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  lastLogin      DateTime?
+}
+
+model Role {
+  id             String           @id @default(uuid())
+  name           String           @unique
+  description    String?
+  admins         Admin[]
+  permissions    RolePermission[]
+}
+
+model Permission {
+  id             String           @id @default(uuid())
+  module         String           // e.g., 'Users', 'Properties', 'Settings'
+  action         String           // e.g., 'View', 'Edit', 'Create', 'Delete', '*'
+  roles          RolePermission[]
+
+  @@unique([module, action])
+}
+
+model RolePermission {
+  roleId         String
+  permissionId   String
+  role           Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission     Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
 }

@@ -23,14 +23,21 @@ import Settings from './pages/settings/Settings';
 import SuperAdmin from './pages/settings/SuperAdmin';
 import System from './pages/settings/System';
 
+import AccessDenied from './pages/auth/AccessDenied';
+
 // Protected Route Wrapper
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute({ children, requiredModule }: { children: React.ReactNode, requiredModule?: string }) {
   const location = useLocation();
   const isAuthenticated = authService.isAuthenticated();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+
+  if (requiredModule && !authService.hasPermission(requiredModule)) {
+    return <AccessDenied />;
+  }
+
   return <>{children}</>;
 }
 
@@ -43,31 +50,28 @@ function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         
         {/* Protected Admin Routes */}
-        <Route 
-          path="/" 
-          element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="users" element={<UserList />} />
-          <Route path="users/roommates" element={<RoommateMatching />} />
-          <Route path="properties" element={<PropertyList />} />
-          <Route path="bookings" element={<BookingList />} />
-          <Route path="payments" element={<PaymentList />} />
-          <Route path="settings/admins" element={<AdminManagement />} />
+        <Route path="/" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+          <Route path="dashboard" element={<ProtectedRoute requiredModule="Dashboard"><Dashboard /></ProtectedRoute>} />
           
-          <Route path="vendors" element={<Vendors />} />
-          <Route path="vendors/banks" element={<BankApprovals />} />
-          <Route path="support" element={<Support />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="cms" element={<CMS />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="super-admin" element={<SuperAdmin />} />
-          <Route path="system" element={<System />} />
+          <Route path="users" element={<ProtectedRoute requiredModule="Users"><UserList /></ProtectedRoute>} />
+          <Route path="users/roommates" element={<ProtectedRoute requiredModule="Users"><RoommateMatching /></ProtectedRoute>} />
+          
+          <Route path="properties" element={<ProtectedRoute requiredModule="Properties"><PropertyList /></ProtectedRoute>} />
+          <Route path="bookings" element={<ProtectedRoute requiredModule="Bookings"><BookingList /></ProtectedRoute>} />
+          <Route path="payments" element={<ProtectedRoute requiredModule="Payments"><PaymentList /></ProtectedRoute>} />
+          
+          <Route path="vendors" element={<ProtectedRoute requiredModule="Vendors"><Vendors /></ProtectedRoute>} />
+          <Route path="vendors/banks" element={<ProtectedRoute requiredModule="Vendors"><BankApprovals /></ProtectedRoute>} />
+          
+          <Route path="support" element={<ProtectedRoute requiredModule="Support"><Support /></ProtectedRoute>} />
+          <Route path="notifications" element={<ProtectedRoute requiredModule="Notifications"><Notifications /></ProtectedRoute>} />
+          <Route path="reports" element={<ProtectedRoute requiredModule="Reports"><Reports /></ProtectedRoute>} />
+          <Route path="cms" element={<ProtectedRoute requiredModule="CMS"><CMS /></ProtectedRoute>} />
+          
+          <Route path="settings" element={<ProtectedRoute requiredModule="Settings"><Settings /></ProtectedRoute>} />
+          <Route path="settings/admins" element={<ProtectedRoute requiredModule="System"><AdminManagement /></ProtectedRoute>} />
+          <Route path="super-admin" element={<ProtectedRoute requiredModule="System"><SuperAdmin /></ProtectedRoute>} />
+          <Route path="system" element={<ProtectedRoute requiredModule="System"><System /></ProtectedRoute>} />
         </Route>
       </Routes>
     </Router>

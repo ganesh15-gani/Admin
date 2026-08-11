@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -13,158 +46,129 @@ const prisma = new client_1.PrismaClient();
 const PORT = process.env.PORT || 5000;
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+const child_process_1 = require("child_process");
+const bcrypt = __importStar(require("bcryptjs"));
 app.get('/api/seed-db', async (req, res) => {
     try {
+        console.log('Running prisma db push...');
+        (0, child_process_1.execSync)('npx prisma db push', { stdio: 'inherit' });
+        console.log('Clearing database...');
+        await prisma.rolePermission.deleteMany();
+        await prisma.permission.deleteMany();
+        await prisma.role.deleteMany();
+        await prisma.payment.deleteMany();
+        await prisma.booking.deleteMany();
         await prisma.property.deleteMany();
         await prisma.user.deleteMany();
-        const u1 = await prisma.user.create({
+        await prisma.admin.deleteMany();
+        console.log('Seeding Permissions...');
+        const modules = ['Dashboard', 'Users', 'Properties', 'Bookings', 'Payments', 'Settings', 'Vendors', 'Reports', 'CMS', 'Notifications', 'System'];
+        const actions = ['View', 'Edit', 'Create', 'Delete'];
+        const allPermissions = [];
+        for (const mod of modules) {
+            for (const act of actions) {
+                allPermissions.push(await prisma.permission.create({
+                    data: { module: mod, action: act }
+                }));
+            }
+        }
+        const fullAccess = await prisma.permission.create({ data: { module: 'System', action: '*' } });
+        console.log('Seeding Roles...');
+        const superAdminRole = await prisma.role.create({
             data: {
-                name: 'Sarah Jenkins',
-                email: 'sarah.j@example.com',
-                phone: '+1 234-567-8901',
+                name: 'Super Admin',
+                description: 'Full access to the entire system',
+                permissions: {
+                    create: [...allPermissions.map(p => ({ permissionId: p.id })), { permissionId: fullAccess.id }]
+                }
+            }
+        });
+        const adminRole = await prisma.role.create({
+            data: {
+                name: 'Admin',
+                description: 'Limited Admin with specific access',
+                permissions: {
+                    create: allPermissions
+                        .filter(p => p.module === 'Users' || p.module === 'Reports')
+                        .map(p => ({ permissionId: p.id }))
+                }
+            }
+        });
+        const viewerRole = await prisma.role.create({
+            data: {
+                name: 'Viewer',
+                description: 'Read-only access',
+                permissions: {
+                    create: allPermissions
+                        .filter(p => p.action === 'View' && (p.module === 'Dashboard' || p.module === 'Reports'))
+                        .map(p => ({ permissionId: p.id }))
+                }
+            }
+        });
+        console.log('Seeding Admins...');
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+        const u1 = await prisma.admin.create({
+            data: {
+                name: 'Super Admin',
+                email: 'admin@stayzen.com',
+                password: hashedPassword,
                 status: 'Active',
-                verification: 'Verified',
-                joinedDate: '2023-01-15',
-                lastLogin: '2024-04-20',
-                bookingsCount: 12
+                isApproved: true,
+                roleId: superAdminRole.id
             }
         });
-        const u2 = await prisma.user.create({
+        await prisma.admin.create({
             data: {
-                name: 'Michael Chen',
-                email: 'm.chen@example.com',
-                phone: '+1 234-567-8902',
+                name: 'John Staff',
+                email: 'john@stayzen.com',
+                password: hashedPassword,
                 status: 'Active',
-                verification: 'Pending',
-                joinedDate: '2024-02-10',
-                lastLogin: '2024-04-18',
-                bookingsCount: 3
+                isApproved: true,
+                roleId: adminRole.id
             }
         });
-        await prisma.property.create({
-            data: {
-                title: 'Luxury Villa with Ocean View',
-                ownerId: u1.id,
-                ownerName: 'Sarah Jenkins',
-                type: 'Villa',
-                location: 'Bali, Indonesia',
-                price: 450,
-                rating: 4.9,
-                status: 'Approved',
-                description: 'A beautiful luxury villa with a private infinity pool overlooking the ocean.',
-                bedrooms: 4,
-                bathrooms: 3,
-                maxGuests: 8,
-                amenities: JSON.stringify(['Pool', 'WiFi', 'Kitchen', 'Air Conditioning', 'Ocean View']),
-                hostEmail: 'sarah.j@example.com',
-                hostPhone: '+1 234-567-8901',
-                imageUrl: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'
-            }
-        });
-        await prisma.property.create({
-            data: {
-                title: 'Downtown Studio Apartment',
-                ownerId: u2.id,
-                ownerName: 'Michael Chen',
-                type: 'Apartment',
-                location: 'New York, USA',
-                price: 120,
-                rating: 4.7,
-                status: 'Pending',
-                description: 'A cozy downtown studio in the heart of the city.',
-                bedrooms: 1,
-                bathrooms: 1,
-                maxGuests: 2,
-                amenities: JSON.stringify(['WiFi', 'AC', 'Kitchenette']),
-                hostEmail: 'm.chen@example.com',
-                hostPhone: '+1 234-567-8902',
-                imageUrl: 'https://images.unsplash.com/photo-1502672260266-1c1c24226133?ixlib=rb-4.0.3&auto=format&fit=crop&w=1374&q=80'
-            }
-        });
-        await prisma.property.create({
-            data: {
-                title: 'Rustic Cabin in the Woods',
-                ownerId: u1.id,
-                ownerName: 'Sarah Jenkins',
-                type: 'Cabin',
-                location: 'Aspen, Colorado',
-                price: 250,
-                rating: 4.8,
-                status: 'Approved',
-                description: 'Escape to nature in this beautiful A-frame cabin.',
-                bedrooms: 2,
-                bathrooms: 1,
-                maxGuests: 4,
-                amenities: JSON.stringify(['Fireplace', 'Hot Tub', 'WiFi']),
-                hostEmail: 'sarah.j@example.com',
-                hostPhone: '+1 234-567-8901',
-                imageUrl: 'https://images.unsplash.com/photo-1449844908441-8829872d2607?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'
-            }
-        });
-        await prisma.property.create({
-            data: {
-                title: 'Modern Santorini Cave House',
-                ownerId: u2.id,
-                ownerName: 'Michael Chen',
-                type: 'House',
-                location: 'Santorini, Greece',
-                price: 320,
-                rating: 5.0,
-                status: 'Approved',
-                description: 'Experience traditional Greek architecture with modern luxury.',
-                bedrooms: 2,
-                bathrooms: 2,
-                maxGuests: 4,
-                amenities: JSON.stringify(['Plunge Pool', 'WiFi', 'AC']),
-                hostEmail: 'm.chen@example.com',
-                hostPhone: '+1 234-567-8902',
-                imageUrl: 'https://images.unsplash.com/photo-1601581875039-e899893d520c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1374&q=80'
-            }
-        });
-        await prisma.property.create({
-            data: {
-                title: 'Chic Parisian Loft',
-                ownerId: u1.id,
-                ownerName: 'Sarah Jenkins',
-                type: 'Apartment',
-                location: 'Paris, France',
-                price: 180,
-                rating: 4.6,
-                status: 'Pending',
-                description: 'A stylish loft in Le Marais. High ceilings, large windows.',
-                bedrooms: 1,
-                bathrooms: 1,
-                maxGuests: 3,
-                amenities: JSON.stringify(['WiFi', 'Kitchen', 'Balcony']),
-                hostEmail: 'sarah.j@example.com',
-                hostPhone: '+1 234-567-8901',
-                imageUrl: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'
-            }
-        });
-        res.json({ success: true, message: 'Database seeded perfectly!' });
+        res.json({ success: true, message: 'Database migrated and seeded perfectly!' });
     }
     catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, error: err.message, stack: err.stack });
     }
 });
+const auth_1 = require("./middleware/auth");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-dev';
+// Admin Management
+app.get('/api/admins', auth_1.authenticate, (0, auth_1.authorize)('Users', 'View'), async (req, res) => {
+    const admins = await prisma.admin.findMany({
+        include: { role: true }
+    });
+    res.json(admins.map(a => { const { password, ...rest } = a; return rest; }));
+});
+app.put('/api/admins/:id/status', auth_1.authenticate, (0, auth_1.authorize)('Users', 'Edit'), async (req, res) => {
+    const { status, isApproved } = req.body;
+    const admin = await prisma.admin.update({
+        where: { id: req.params.id },
+        data: { status, isApproved }
+    });
+    res.json(admin);
+});
 // Users
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', auth_1.authenticate, (0, auth_1.authorize)('Users', 'View'), async (req, res) => {
     const users = await prisma.user.findMany();
     res.json(users);
 });
-app.get('/api/users/:id', async (req, res) => {
+app.get('/api/users/:id', auth_1.authenticate, (0, auth_1.authorize)('Users', 'View'), async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: req.params.id } });
     user ? res.json(user) : res.status(404).json({ error: 'Not found' });
 });
 // Properties
-app.get('/api/properties', async (req, res) => {
+app.get('/api/properties', auth_1.authenticate, (0, auth_1.authorize)('Properties', 'View'), async (req, res) => {
     const properties = await prisma.property.findMany();
     res.json(properties.map(p => ({
         ...p,
         amenities: p.amenities ? JSON.parse(p.amenities) : []
     })));
 });
-app.get('/api/properties/:id', async (req, res) => {
+app.get('/api/properties/:id', auth_1.authenticate, (0, auth_1.authorize)('Properties', 'View'), async (req, res) => {
     const p = await prisma.property.findUnique({ where: { id: req.params.id } });
     if (p) {
         res.json({ ...p, amenities: p.amenities ? JSON.parse(p.amenities) : [] });
@@ -173,7 +177,7 @@ app.get('/api/properties/:id', async (req, res) => {
         res.status(404).json({ error: 'Not found' });
     }
 });
-app.put('/api/properties/:id/status', async (req, res) => {
+app.put('/api/properties/:id/status', auth_1.authenticate, (0, auth_1.authorize)('Properties', 'Edit'), async (req, res) => {
     const { status } = req.body;
     const updated = await prisma.property.update({
         where: { id: req.params.id },
@@ -182,11 +186,11 @@ app.put('/api/properties/:id/status', async (req, res) => {
     res.json({ ...updated, amenities: updated.amenities ? JSON.parse(updated.amenities) : [] });
 });
 // Bookings
-app.get('/api/bookings', async (req, res) => {
+app.get('/api/bookings', auth_1.authenticate, (0, auth_1.authorize)('Bookings', 'View'), async (req, res) => {
     const bookings = await prisma.booking.findMany();
     res.json(bookings);
 });
-app.put('/api/bookings/:id/status', async (req, res) => {
+app.put('/api/bookings/:id/status', auth_1.authenticate, (0, auth_1.authorize)('Bookings', 'Edit'), async (req, res) => {
     const { status } = req.body;
     const updated = await prisma.booking.update({
         where: { id: req.params.id },
@@ -195,33 +199,78 @@ app.put('/api/bookings/:id/status', async (req, res) => {
     res.json(updated);
 });
 // Payments
-app.get('/api/payments', async (req, res) => {
+app.get('/api/payments', auth_1.authenticate, (0, auth_1.authorize)('Payments', 'View'), async (req, res) => {
     const payments = await prisma.payment.findMany();
     res.json(payments);
 });
-// Auth (Simple mock with db check)
+// Auth
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        const existing = await prisma.admin.findUnique({ where: { email } });
+        if (existing) {
+            return res.status(400).json({ error: 'Email already exists' });
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const admin = await prisma.admin.create({
+            data: {
+                name,
+                email,
+                password: hashedPassword,
+                status: 'Pending',
+                isApproved: false
+            }
+        });
+        res.json({ success: true, message: 'Registration successful. Waiting for Super Admin approval.' });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    const admin = await prisma.admin.findUnique({ where: { email } });
-    if (admin) {
-        res.json({ user: admin, token: 'mock-jwt-token-stayzen-admin-xyz' });
+    const admin = await prisma.admin.findUnique({
+        where: { email },
+        include: { role: { include: { permissions: { include: { permission: true } } } } }
+    });
+    if (!admin) {
+        return res.status(401).json({ error: 'Invalid credentials' });
     }
-    else {
-        res.status(401).json({ error: 'Invalid credentials' });
+    const valid = await bcrypt.compare(password, admin.password);
+    if (!valid) {
+        return res.status(401).json({ error: 'Invalid credentials' });
     }
+    if (!admin.isApproved || admin.status !== 'Active') {
+        return res.status(403).json({ error: admin.status === 'Pending' ? 'Your account is pending approval by the Super Admin.' : 'You are not authorized to access this system.' });
+    }
+    await prisma.admin.update({ where: { id: admin.id }, data: { lastLogin: new Date() } });
+    const token = jsonwebtoken_1.default.sign({ id: admin.id }, JWT_SECRET, { expiresIn: '1d' });
+    const userPayload = {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role?.name || 'Viewer',
+        permissions: admin.role?.permissions.map(rp => rp.permission) || []
+    };
+    res.json({ user: userPayload, token });
+});
+app.get('/api/auth/me', auth_1.authenticate, async (req, res) => {
+    const admin = req.user;
+    const userPayload = {
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role?.name || 'Viewer',
+        permissions: admin.role?.permissions.map((rp) => rp.permission) || []
+    };
+    res.json({ user: userPayload });
 });
 // System Health
 app.get('/health', (req, res) => {
-    res.json({
-        success: true,
-        message: 'StayZen Admin API is running'
-    });
+    res.json({ success: true, message: 'StayZen Admin API is running' });
 });
 app.get('/api/health', (req, res) => {
-    res.json({
-        success: true,
-        message: 'StayZen Admin API is running'
-    });
+    res.json({ success: true, message: 'StayZen Admin API is running' });
 });
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
