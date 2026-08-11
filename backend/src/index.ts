@@ -209,6 +209,41 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+// Secure Bootstrap for legacy accounts
+app.post('/api/auth/bootstrap', async (req, res) => {
+  try {
+    const { email, newPassword, bootstrapToken } = req.body;
+    
+    // 1. Verify bootstrap secret
+    const expectedToken = process.env.BOOTSTRAP_SECRET;
+    if (!expectedToken || bootstrapToken !== expectedToken) {
+      return res.status(403).json({ error: 'Invalid or missing bootstrap token.' });
+    }
+
+    // 2. Find the existing admin
+    const admin = await prisma.admin.findUnique({ where: { email } });
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin account not found.' });
+    }
+
+    // 3. Ensure single-use (only for uninitialized accounts)
+    if (admin.password) {
+      return res.status(400).json({ error: 'Account has already been initialized.' });
+    }
+
+    // 4. Securely hash and save the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: { password: hashedPassword }
+    });
+
+    res.json({ success: true, message: 'Super Admin account securely initialized. You may now log in.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   const admin = await prisma.admin.findUnique({ 
@@ -221,17 +256,12 @@ app.post('/api/auth/login', async (req, res) => {
   }
   
   if (!admin.password) {
-    // Trust on First Use for legacy accounts
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await prisma.admin.update({ 
-      where: { id: admin.id }, 
-      data: { password: hashedPassword } 
-    });
-  } else {
-    const valid = await bcrypt.compare(password, admin.password);
-    if (!valid) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
+    return res.status(403).json({ error: 'Account not initialized. Please run the secure bootstrap process.' });
+  }
+  
+  const valid = await bcrypt.compare(password, admin.password);
+  if (!valid) {
+    return res.status(401).json({ error: 'Invalid credentials' });
   }
   
   if (!admin.isApproved || admin.status !== 'Active') {
