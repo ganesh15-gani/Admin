@@ -28,8 +28,14 @@ export const authService = {
         body: JSON.stringify({ email, password })
       });
       
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Login failed');
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        throw new Error('Server returned an invalid response. Please check your API URL.');
+      }
+      
+      if (!response.ok) throw new Error(data?.error || 'Login failed');
       
       const { user, token } = data;
 
@@ -51,8 +57,14 @@ export const authService = {
         body: JSON.stringify({ name, email, password })
       });
       
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Registration failed');
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        throw new Error('Server returned an invalid response. Please check your API URL.');
+      }
+      
+      if (!response.ok) throw new Error(data?.error || 'Registration failed');
       
       return data;
     } catch (err) {

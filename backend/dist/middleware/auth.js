@@ -16,6 +16,10 @@ const authenticate = async (req, res, next) => {
             return;
         }
         const token = authHeader.split(' ')[1];
+        if (!token) {
+            res.status(401).json({ error: 'Unauthorized: Invalid token format' });
+            return;
+        }
         const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
         const user = await prisma.admin.findUnique({
             where: { id: decoded.id },
