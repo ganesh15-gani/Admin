@@ -34,19 +34,23 @@ export default function AdminManagement() {
   const { success, error } = useToast();
 
   const loadData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const [adminsData, rolesData] = await Promise.all([
-        adminService.getAdmins(),
-        adminService.getRoles()
-      ]);
+      const adminsData = await adminService.getAdmins();
       setAdmins(adminsData);
+    } catch (err: any) {
+      error(`Failed to load admins: ${err.message}`);
+    }
+
+    try {
+      const rolesData = await adminService.getRoles();
       setRoles(rolesData);
     } catch (err) {
-      error('Failed to load data');
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch roles:', err);
+      // Don't toast error for roles to prevent blocking UI
     }
+    
+    setLoading(false);
   };
 
   const loadAdmins = async () => {
