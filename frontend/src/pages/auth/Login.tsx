@@ -23,7 +23,7 @@ export default function Login() {
       setIsLoading(true);
       await authService.login(email, password);
       success('Successfully logged in');
-      navigate('/dashboard');
+      navigate('/');
     } catch (err: any) {
       error(err.message || 'Failed to login');
     } finally {
