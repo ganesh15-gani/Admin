@@ -41,13 +41,22 @@ function ProtectedRoute({ children, requiredModule }: { children: React.ReactNod
   return <>{children}</>;
 }
 
+function DefaultRoute() {
+  if (!authService.isAuthenticated()) return <Navigate to="/login" replace />;
+  if (authService.hasPermission('Dashboard')) return <Navigate to="/dashboard" replace />;
+  if (authService.hasPermission('Properties')) return <Navigate to="/properties" replace />;
+  if (authService.hasPermission('Users')) return <Navigate to="/users" replace />;
+  if (authService.hasPermission('Bookings')) return <Navigate to="/bookings" replace />;
+  return <Navigate to="/dashboard" replace />;
+}
+
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<DefaultRoute />} />
         
         {/* Protected Admin Routes */}
         <Route path="/" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>

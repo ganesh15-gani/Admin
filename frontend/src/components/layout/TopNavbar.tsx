@@ -95,7 +95,7 @@ export default function TopNavbar({ setIsMobileOpen }: TopNavbarProps) {
         >
           <div className="hidden md:flex flex-col items-end text-sm">
             <span className="font-semibold text-slate-800 leading-tight">{user?.name || 'Admin'}</span>
-            <span className="text-xs text-brand-600 font-medium">{user?.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Staff'}</span>
+            <span className="text-xs text-brand-600 font-medium">{user?.role || 'Staff'}</span>
           </div>
           {user?.avatar ? (
             <img
