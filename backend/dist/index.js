@@ -226,6 +226,13 @@ app.put('/api/admins/:id/password', auth_1.authenticate, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+// Roles
+app.get('/api/roles', auth_1.authenticate, (0, auth_1.authorize)('Users', 'View'), async (req, res) => {
+    const roles = await prisma.role.findMany({
+        include: { permissions: { include: { permission: true } } }
+    });
+    res.json(roles);
+});
 // Users
 app.get('/api/users', auth_1.authenticate, (0, auth_1.authorize)('Users', 'View'), async (req, res) => {
     const users = await prisma.user.findMany();
