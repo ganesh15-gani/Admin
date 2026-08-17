@@ -11,6 +11,7 @@ import { useToast } from '../../components/ui/ToastContext';
 
 export default function AdminManagement() {
   const [admins, setAdmins] = useState<AuthUser[]>([]);
+  const [roles, setRoles] = useState<{ id: string, name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Create Modal State
@@ -32,20 +33,33 @@ export default function AdminManagement() {
 
   const { success, error } = useToast();
 
-  const loadAdmins = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const data = await adminService.getAdmins();
-      setAdmins(data);
+      const [adminsData, rolesData] = await Promise.all([
+        adminService.getAdmins(),
+        adminService.getRoles()
+      ]);
+      setAdmins(adminsData);
+      setRoles(rolesData);
     } catch (err) {
-      error('Failed to load admins');
+      error('Failed to load data');
     } finally {
       setLoading(false);
     }
   };
 
+  const loadAdmins = async () => {
+    try {
+      const data = await adminService.getAdmins();
+      setAdmins(data);
+    } catch (err) {
+      // quiet fail
+    }
+  };
+
   useEffect(() => {
-    loadAdmins();
+    loadData();
   }, []);
 
   const handleApprove = async (id: string) => {
@@ -153,7 +167,7 @@ export default function AdminManagement() {
     {
       header: 'Role & Status',
       accessor: (row: any) => {
-        const variants: any = { 'Super Admin': 'danger', 'Admin': 'success', 'Viewer': 'default' };
+        const variants: any = { 'Super Admin': 'danger', 'Admin': 'success', 'Sales': 'warning', 'Staff': 'info', 'Viewer': 'default' };
         return (
           <div className="flex flex-col space-y-1">
             <div className="flex items-center space-x-2">
@@ -272,6 +286,18 @@ export default function AdminManagement() {
               value={createData.email}
               onChange={(e) => setCreateData(prev => ({ ...prev, email: e.target.value }))}
             />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Role</label>
+            <select
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+              value={createData.roleName}
+              onChange={(e) => setCreateData(prev => ({ ...prev, roleName: e.target.value }))}
+            >
+              {roles.filter(r => r.name !== 'Super Admin').map(role => (
+                <option key={role.id} value={role.name}>{role.name}</option>
+              ))}
+            </select>
           </div>
           <div className="flex justify-end space-x-3 pt-4">
             <Button variant="outline" onClick={() => setIsCreateOpen(false)} disabled={createData.isProcessing}>

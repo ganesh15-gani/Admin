@@ -6,6 +6,10 @@ export const adminService = {
     return await fetchApi('/admins');
   },
   
+  getRoles: async (): Promise<{ id: string, name: string, description: string }[]> => {
+    return await fetchApi('/roles');
+  },
+
   updateStatus: async (id: string, status: string, isApproved: boolean): Promise<void> => {
     await fetchApi(`/admins/${id}/status`, {
       method: 'PUT',

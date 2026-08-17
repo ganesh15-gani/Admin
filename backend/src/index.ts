@@ -216,6 +216,14 @@ app.put('/api/admins/:id/password', authenticate, async (req: AuthRequest, res) 
   }
 });
 
+// Roles
+app.get('/api/roles', authenticate, authorize('Users', 'View'), async (req, res) => {
+  const roles = await prisma.role.findMany({
+    include: { permissions: { include: { permission: true } } }
+  });
+  res.json(roles);
+});
+
 // Users
 app.get('/api/users', authenticate, authorize('Users', 'View'), async (req, res) => {
   const users = await prisma.user.findMany();
