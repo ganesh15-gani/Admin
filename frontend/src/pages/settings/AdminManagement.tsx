@@ -298,9 +298,16 @@ export default function AdminManagement() {
               value={createData.roleName}
               onChange={(e) => setCreateData(prev => ({ ...prev, roleName: e.target.value }))}
             >
-              {roles.filter(r => r.name !== 'Super Admin').map(role => (
-                <option key={role.id} value={role.name}>{role.name}</option>
-              ))}
+              {roles.length > 0 ? (
+                roles.filter(r => r.name !== 'Super Admin').map(role => (
+                  <option key={role.id} value={role.name}>{role.name}</option>
+                ))
+              ) : (
+                <>
+                  <option value="Staff">Staff</option>
+                  <option value="Sales">Sales</option>
+                </>
+              )}
             </select>
           </div>
           <div className="flex justify-end space-x-3 pt-4">
