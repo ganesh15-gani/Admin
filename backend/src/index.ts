@@ -277,8 +277,8 @@ app.post('/api/properties', authenticate, authorize('Properties', 'Edit'), async
       maxGuests: Number(maxGuests) || 2,
       amenities: amenities ? JSON.stringify(amenities) : '[]',
       status: 'Pending',
-      ownerName: req.user?.name || 'Admin',
-      ownerId: req.user?.id || 'admin-id',
+      ownerName: (req as any).user?.name || 'Admin',
+      ownerId: (req as any).user?.id || 'admin-id',
       rating: 0
     }
   });
