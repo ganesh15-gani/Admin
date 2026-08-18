@@ -1,4 +1,4 @@
-import { delay } from './apiClient';
+import { fetchApi, delay } from './apiClient';
 
 export interface DashboardMetrics {
   totalUsers: number;
@@ -21,30 +21,7 @@ export type TimeFilter = 'Today' | '7 Days' | '30 Days' | 'This Year';
 
 export const dashboardService = {
   getMetrics: async (filter: TimeFilter = 'This Year'): Promise<DashboardMetrics> => {
-    await delay(700);
-    
-    // Dynamic mock multipliers based on time filter
-    let multiplier = 1;
-    if (filter === 'Today') multiplier = 0.01;
-    if (filter === '7 Days') multiplier = 0.08;
-    if (filter === '30 Days') multiplier = 0.25;
-
-    return {
-      totalUsers: Math.floor(12450 * multiplier),
-      totalProperties: Math.floor(840 * multiplier) || 12, // Ensure at least some properties
-      activeBookings: Math.floor(320 * multiplier) || 5,
-      totalRevenue: Math.floor(1450000 * multiplier),
-      activeVendors: Math.floor(145 * multiplier) || 8,
-      pendingApprovals: Math.floor(24 * multiplier),
-      supportTickets: Math.floor(18 * multiplier),
-      cancellationRate: filter === 'This Year' ? 2.4 : filter === 'Today' ? 0 : 1.2,
-      trends: {
-        users: filter === 'Today' ? 1.5 : filter === '7 Days' ? 4.2 : 12.5,
-        properties: filter === 'Today' ? 0 : filter === '7 Days' ? 1.2 : 5.2,
-        bookings: filter === 'Today' ? -0.5 : filter === '7 Days' ? 1.4 : -2.4,
-        revenue: filter === 'Today' ? 2.1 : filter === '7 Days' ? 8.5 : 18.2
-      }
-    };
+    return await fetchApi(`/dashboard/metrics?filter=${encodeURIComponent(filter)}`);
   },
   
   getRevenueData: async (filter: TimeFilter = 'This Year') => {

@@ -216,6 +216,55 @@ app.put('/api/admins/:id/password', authenticate, async (req: AuthRequest, res) 
   }
 });
 
+// Dashboard Metrics
+app.get('/api/dashboard/metrics', authenticate, authorize('Dashboard', 'View'), async (req, res) => {
+  try {
+    const filter = req.query.filter as string || 'This Year';
+    
+    const [totalUsers, totalProperties, pendingApprovals, activeBookings, revenueData] = await Promise.all([
+      prisma.admin.count(),
+      prisma.property.count(),
+      prisma.property.count({ where: { status: 'Pending' } }),
+      prisma.booking.count({ where: { status: { not: 'Cancelled' } } }),
+      prisma.payment.aggregate({
+        _sum: { amount: true },
+        where: { status: 'Successful' }
+      })
+    ]);
+
+    const totalRevenue = revenueData._sum.amount || 0;
+
+    // Simulate active vendors and support tickets as requested
+    const activeVendors = 12;
+    const supportTickets = 5;
+
+    // Dynamic multipliers to simulate trend changes
+    let multiplier = 1;
+    if (filter === 'Today') multiplier = 0.01;
+    if (filter === '7 Days') multiplier = 0.08;
+    if (filter === '30 Days') multiplier = 0.25;
+
+    res.json({
+      totalUsers,
+      totalProperties,
+      pendingApprovals,
+      activeBookings,
+      totalRevenue,
+      activeVendors,
+      supportTickets,
+      cancellationRate: filter === 'This Year' ? 2.4 : filter === 'Today' ? 0 : 1.2,
+      trends: {
+        users: filter === 'Today' ? 1.5 : filter === '7 Days' ? 4.2 : 12.5,
+        properties: filter === 'Today' ? 0 : filter === '7 Days' ? 1.2 : 5.2,
+        bookings: filter === 'Today' ? -0.5 : filter === '7 Days' ? 1.4 : -2.4,
+        revenue: filter === 'Today' ? 2.1 : filter === '7 Days' ? 8.5 : 18.2
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Roles
 app.get('/api/roles', authenticate, authorize('Users', 'View'), async (req, res) => {
   const roles = await prisma.role.findMany({
