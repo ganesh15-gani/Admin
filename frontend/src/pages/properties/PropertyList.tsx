@@ -15,6 +15,7 @@ export default function PropertyList() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   
   // Dialog state
   const [confirmState, setConfirmState] = useState<{
@@ -252,23 +253,41 @@ export default function PropertyList() {
         </div>
         <div className="flex items-center space-x-3">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-              <Filter size={16} />
-            </div>
-            <select
-              className="pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none bg-white hover:bg-slate-50 cursor-pointer transition-colors"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
             >
-              <option value="All">All Statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Suspended">Suspended</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-slate-400">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-            </div>
+              <Filter size={16} className="mr-2" />
+              {statusFilter === 'All' ? 'Filter' : statusFilter}
+            </Button>
+            
+            {isFilterOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setIsFilterOpen(false)}
+                ></div>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 animate-fade-in">
+                  {['All', 'Pending', 'Approved', 'Suspended', 'Rejected'].map((status) => (
+                    <button
+                      key={status}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        statusFilter === status 
+                          ? 'bg-brand-50 text-brand-700 font-medium' 
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                      onClick={() => {
+                        setStatusFilter(status);
+                        setIsFilterOpen(false);
+                      }}
+                    >
+                      {status === 'All' ? 'All Statuses' : status}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
           <Button variant="primary" size="sm" onClick={() => setCreateModal(prev => ({ ...prev, isOpen: true }))}>
             <Plus size={16} className="mr-2" />
