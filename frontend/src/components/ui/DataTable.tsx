@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { Input } from './Input';
 
@@ -27,6 +27,20 @@ export function DataTable<T>({
   isLoading,
   emptyMessage = 'No data available',
 }: DataTableProps<T>) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+
+  // Reset to page 1 if data changes significantly (like filtering)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [data.length]);
+
+  const currentData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, data.length);
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in transition-all duration-300">
       {onSearch && (
@@ -67,7 +81,7 @@ export function DataTable<T>({
                 </td>
               </tr>
             ) : (
-              data.map((row, index) => (
+              currentData.map((row, index) => (
                 <tr 
                   key={keyExtractor(row)} 
                   className="hover:bg-brand-50/30 transition-colors cursor-pointer group"
@@ -89,13 +103,22 @@ export function DataTable<T>({
       {!isLoading && data.length > 0 && (
         <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
           <span className="text-sm text-slate-500">
-            Showing <span className="font-medium text-slate-800">1</span> to <span className="font-medium text-slate-800">{data.length}</span> results
+            Showing <span className="font-medium text-slate-800">{startItem}</span> to <span className="font-medium text-slate-800">{endItem}</span> of <span className="font-medium text-slate-800">{data.length}</span> results
           </span>
           <div className="flex items-center space-x-2">
-            <button className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-gray-100 disabled:opacity-50 transition-all cursor-pointer" disabled>
+            <button 
+              className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-gray-100 disabled:opacity-50 transition-all cursor-pointer" 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            >
               <ChevronLeft size={20} />
             </button>
-            <button className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-gray-100 disabled:opacity-50 transition-all cursor-pointer" disabled>
+            <span className="text-xs font-medium text-slate-600 px-2">Page {currentPage} of {totalPages}</span>
+            <button 
+              className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-gray-100 disabled:opacity-50 transition-all cursor-pointer" 
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            >
               <ChevronRight size={20} />
             </button>
           </div>
