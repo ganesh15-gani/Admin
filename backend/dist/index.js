@@ -267,6 +267,39 @@ app.put('/api/properties/:id/status', auth_1.authenticate, (0, auth_1.authorize)
     });
     res.json({ ...updated, amenities: updated.amenities ? JSON.parse(updated.amenities) : [] });
 });
+app.post('/api/properties', auth_1.authenticate, (0, auth_1.authorize)('Properties', 'Edit'), async (req, res) => {
+    const { title, type, location, price, description, bedrooms, bathrooms, maxGuests, amenities } = req.body;
+    if (!title || !location || !price) {
+        return res.status(400).json({ error: 'Title, location, and price are required.' });
+    }
+    const newProp = await prisma.property.create({
+        data: {
+            title,
+            type: type || 'Apartment',
+            location,
+            price: Number(price),
+            description: description || '',
+            bedrooms: Number(bedrooms) || 1,
+            bathrooms: Number(bathrooms) || 1,
+            maxGuests: Number(maxGuests) || 2,
+            amenities: amenities ? JSON.stringify(amenities) : '[]',
+            status: 'Pending',
+            ownerName: req.user?.name || 'Admin',
+            ownerId: req.user?.id || 'admin-id',
+            rating: 0
+        }
+    });
+    res.status(201).json({ ...newProp, amenities: newProp.amenities ? JSON.parse(newProp.amenities) : [] });
+});
+app.delete('/api/properties/:id', auth_1.authenticate, (0, auth_1.authorize)('Properties', 'Edit'), async (req, res) => {
+    try {
+        await prisma.property.delete({ where: { id: req.params.id } });
+        res.json({ success: true, message: 'Property deleted successfully' });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // Bookings
 app.get('/api/bookings', auth_1.authenticate, (0, auth_1.authorize)('Bookings', 'View'), async (req, res) => {
     const bookings = await prisma.booking.findMany();
