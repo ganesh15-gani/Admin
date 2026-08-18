@@ -68,5 +68,12 @@ export const vendorService = {
     await fetchApi(`/vendors/${id}`, {
       method: 'DELETE'
     });
+  },
+
+  createVendor: async (data: Partial<Vendor>): Promise<Vendor> => {
+    return await fetchApi('/vendors', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
   }
 };

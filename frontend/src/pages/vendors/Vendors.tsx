@@ -6,11 +6,13 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import { useToast } from '../../components/ui/ToastContext';
+import { AddVendorModal } from './AddVendorModal';
 
 export default function Vendors() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
   // Dialog state
   const [confirmState, setConfirmState] = useState<{
@@ -172,7 +174,7 @@ export default function Vendors() {
           </h1>
           <p className="text-sm text-slate-500 mt-1">Manage property owners, agencies, and individual hosts.</p>
         </div>
-        <Button className="shadow-md shadow-brand-500/20">
+        <Button className="shadow-md shadow-brand-500/20" onClick={() => setIsAddModalOpen(true)}>
           <UserPlus size={18} className="mr-2" />
           Add Vendor
         </Button>
@@ -208,6 +210,15 @@ export default function Vendors() {
         }
         isDestructive={confirmState.action === 'delete' || confirmState.action === 'suspend'}
         isLoading={confirmState.isProcessing}
+      />
+
+      {/* Add Vendor Modal */}
+      <AddVendorModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={(newVendor) => {
+          setVendors(prev => [newVendor, ...prev]);
+        }}
       />
     </div>
   );
