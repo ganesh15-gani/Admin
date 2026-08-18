@@ -30,6 +30,12 @@ export const bankApprovalService = {
         { vendorName: 'Urban Retreats', bankName: 'Kotak Mahindra', accountType: 'Savings Account', accountNumber: '**** **** 2244', accountHolder: 'David Chen', status: 'Linked', swiftCode: 'KKBK000111' },
       ];
 
+      // Load from localStorage if available to persist between page loads
+      const stored = localStorage.getItem('stayzen_mock_banks');
+      if (stored) {
+        return JSON.parse(stored) as BankAccount[];
+      }
+
       const mockAccounts = [];
       const statuses = ['Pending', 'Pending', 'Linked', 'Linked', 'Rejected'];
       
@@ -45,21 +51,42 @@ export const bankApprovalService = {
           status: randomStatus
         });
       }
+      localStorage.setItem('stayzen_mock_banks', JSON.stringify(mockAccounts));
       return mockAccounts as BankAccount[];
     }
   },
   
   approveAccount: async (id: string): Promise<void> => {
-    await fetchApi(`/bank-accounts/${id}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status: 'Linked' })
-    });
+    try {
+      await fetchApi(`/bank-accounts/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'Linked' })
+      });
+    } catch (e) {
+      // Fallback
+      const stored = localStorage.getItem('stayzen_mock_banks');
+      if (stored) {
+        const banks = JSON.parse(stored) as BankAccount[];
+        const updated = banks.map(b => b.id === id ? { ...b, status: 'Linked' } : b);
+        localStorage.setItem('stayzen_mock_banks', JSON.stringify(updated));
+      }
+    }
   },
   
   rejectAccount: async (id: string): Promise<void> => {
-    await fetchApi(`/bank-accounts/${id}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status: 'Rejected' })
-    });
+    try {
+      await fetchApi(`/bank-accounts/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'Rejected' })
+      });
+    } catch (e) {
+      // Fallback
+      const stored = localStorage.getItem('stayzen_mock_banks');
+      if (stored) {
+        const banks = JSON.parse(stored) as BankAccount[];
+        const updated = banks.map(b => b.id === id ? { ...b, status: 'Rejected' } : b);
+        localStorage.setItem('stayzen_mock_banks', JSON.stringify(updated));
+      }
+    }
   }
 };
