@@ -26,11 +26,17 @@ export default function PropertyList() {
   }>({ isOpen: false, propertyId: null, action: null, isProcessing: false });
 
   // Create modal state
-  const [createModal, setCreateModal] = useState({
+  const [createModal, setCreateModal] = useState<{
+    isOpen: boolean;
+    isProcessing: boolean;
+    data: {
+      title: string; location: string; price: string; type: string; bedrooms: number; bathrooms: number; maxGuests: number; description: string; amenities: string;
+    }
+  }>({
     isOpen: false,
     isProcessing: false,
     data: {
-      title: '', location: '', price: '', type: 'Apartment', bedrooms: 1, bathrooms: 1, maxGuests: 2, description: ''
+      title: '', location: '', price: '', type: 'Apartment', bedrooms: 1, bathrooms: 1, maxGuests: 2, description: '', amenities: ''
     }
   });
 
@@ -106,12 +112,14 @@ export default function PropertyList() {
     try {
       const payload = {
         ...createModal.data,
-        price: Number(createModal.data.price)
+        price: Number(createModal.data.price),
+        amenities: createModal.data.amenities ? createModal.data.amenities.split(',').map(a => a.trim()).filter(a => a) : []
       };
+      // @ts-ignore
       const newProp = await propertyService.createProperty(payload);
       setProperties(prev => [newProp, ...prev]);
       success('Property created successfully');
-      setCreateModal({ isOpen: false, isProcessing: false, data: { title: '', location: '', price: '', type: 'Apartment', bedrooms: 1, bathrooms: 1, maxGuests: 2, description: '' } });
+      setCreateModal({ isOpen: false, isProcessing: false, data: { title: '', location: '', price: '', type: 'Apartment', bedrooms: 1, bathrooms: 1, maxGuests: 2, description: '', amenities: '' } });
     } catch (err) {
       error('Failed to create property');
       setCreateModal(prev => ({ ...prev, isProcessing: false }));
@@ -547,6 +555,16 @@ export default function PropertyList() {
               value={createModal.data.description}
               onChange={(e) => setCreateModal(prev => ({ ...prev, data: { ...prev.data, description: e.target.value } }))}
             ></textarea>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Amenities (comma separated)</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="e.g. WiFi, Pool, Gym"
+              value={createModal.data.amenities}
+              onChange={(e) => setCreateModal(prev => ({ ...prev, data: { ...prev.data, amenities: e.target.value } }))}
+            />
           </div>
           <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
             <Button variant="outline" onClick={() => setCreateModal(prev => ({ ...prev, isOpen: false }))} disabled={createModal.isProcessing}>
