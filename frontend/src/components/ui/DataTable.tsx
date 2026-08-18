@@ -100,7 +100,7 @@ export function DataTable<T>({
       {!isLoading && data.length > 0 && (
         <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
           <span className="text-sm font-medium text-slate-600">
-            {currentPage} out of {totalPages}
+            {currentPage} of {totalPages}
           </span>
           <div className="flex items-center space-x-1">
             <button 

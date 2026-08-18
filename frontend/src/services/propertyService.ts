@@ -19,12 +19,16 @@ export const propertyService = {
       ];
 
       const mockProperties = [];
+      const statuses = ['Approved', 'Approved', 'Approved', 'Pending', 'Suspended'];
+      
       for (let i = 0; i < 42; i++) {
         const base = baseProperties[i % baseProperties.length];
+        const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
         mockProperties.push({
           ...base,
           id: (i + 1).toString(),
           title: `${base.title} ${i > 5 ? `(Unit ${i + 1})` : ''}`,
+          status: randomStatus,
           ownerId: '1',
           ownerName: 'Super Admin'
         });
