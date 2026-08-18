@@ -15,6 +15,69 @@ app.use(express.json());
 import { execSync } from 'child_process';
 import * as bcrypt from 'bcryptjs';
 
+// VENDORS ROUTES
+app.get('/api/vendors', async (req, res) => {
+  try {
+    const vendors = await prisma.vendor.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(vendors);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch vendors' });
+  }
+});
+
+app.post('/api/vendors', async (req, res) => {
+  try {
+    const { name, email, phone, companyName } = req.body;
+    
+    // Check if email exists
+    const existing = await prisma.vendor.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    
+    const vendor = await prisma.vendor.create({
+      data: {
+        name,
+        email,
+        phone,
+        companyName,
+        joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      }
+    });
+    res.status(201).json(vendor);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create vendor' });
+  }
+});
+
+app.put('/api/vendors/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const vendor = await prisma.vendor.update({
+      where: { id },
+      data: { status }
+    });
+    res.json(vendor);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update vendor status' });
+  }
+});
+
+app.delete('/api/vendors/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.vendor.delete({
+      where: { id }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete vendor' });
+  }
+});
+
 app.get('/api/seed-db', async (req, res) => {
   try {
     console.log('Running prisma db push...');
@@ -27,6 +90,7 @@ app.get('/api/seed-db', async (req, res) => {
     await prisma.payment.deleteMany();
     await prisma.booking.deleteMany();
     await prisma.property.deleteMany();
+    await prisma.vendor.deleteMany();
     await prisma.user.deleteMany();
     await prisma.admin.deleteMany();
 

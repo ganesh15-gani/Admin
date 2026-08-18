@@ -19,6 +19,21 @@ model User {
   bookingsCount  Int
 }
 
+model Vendor {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  phone           String
+  companyName     String?
+  status          String   @default("Pending") // Active, Pending, Suspended
+  propertiesCount Int      @default(0)
+  rating          Float    @default(0)
+  joinedDate      String
+  kycStatus       String   @default("Pending") // Verified, Pending, Rejected
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+}
+
 model Property {
   id             String   @id @default(uuid())
   title          String
