@@ -25,5 +25,18 @@ export const propertyService = {
       method: 'PUT',
       body: JSON.stringify({ status: 'Suspended' })
     });
+  },
+
+  createProperty: async (data: Partial<Property>): Promise<Property> => {
+    return await fetchApi('/properties', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  deleteProperty: async (id: string): Promise<void> => {
+    await fetchApi(`/properties/${id}`, {
+      method: 'DELETE'
+    });
   }
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Home, CheckCircle, XCircle, Ban, Eye, Filter, Users, BedDouble, Bath, MapPin, Phone, Mail } from 'lucide-react';
+import { Home, CheckCircle, XCircle, Ban, Eye, Filter, Users, BedDouble, Bath, MapPin, Phone, Mail, Plus, Trash2 } from 'lucide-react';
 import { propertyService } from '../../services/propertyService';
 import { type Property, type PropertyStatus } from '../../types';
 import { DataTable, type Column } from '../../components/ui/DataTable';
@@ -19,9 +19,18 @@ export default function PropertyList() {
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
     propertyId: string | null;
-    action: 'approve' | 'suspend' | null;
+    action: 'approve' | 'suspend' | 'delete' | null;
     isProcessing: boolean;
   }>({ isOpen: false, propertyId: null, action: null, isProcessing: false });
+
+  // Create modal state
+  const [createModal, setCreateModal] = useState({
+    isOpen: false,
+    isProcessing: false,
+    data: {
+      title: '', location: '', price: '', type: 'Apartment', bedrooms: 1, bathrooms: 1, maxGuests: 2, description: ''
+    }
+  });
 
   // Reject modal state
   const [rejectModal, setRejectModal] = useState<{
@@ -55,7 +64,7 @@ export default function PropertyList() {
     loadProperties();
   }, []);
 
-  const openConfirm = (id: string, action: 'approve' | 'suspend') => {
+  const openConfirm = (id: string, action: 'approve' | 'suspend' | 'delete') => {
     setConfirmState({ isOpen: true, propertyId: id, action, isProcessing: false });
   };
 
@@ -69,18 +78,37 @@ export default function PropertyList() {
       if (action === 'approve') {
         await propertyService.approveProperty(propertyId);
         success('Property approved successfully');
+        setProperties(prev => prev.map(p => p.id === propertyId ? { ...p, status: 'Approved' } : p));
       } else if (action === 'suspend') {
         await propertyService.suspendProperty(propertyId);
         success('Property suspended successfully');
+        setProperties(prev => prev.map(p => p.id === propertyId ? { ...p, status: 'Suspended' } : p));
+      } else if (action === 'delete') {
+        await propertyService.deleteProperty(propertyId);
+        success('Property deleted successfully');
+        setProperties(prev => prev.filter(p => p.id !== propertyId));
       }
-      
-      setProperties(prev => prev.map(p => 
-        p.id === propertyId ? { ...p, status: action === 'approve' ? 'Approved' : 'Suspended' } : p
-      ));
     } catch (err) {
       error(`Failed to ${action} property`);
     } finally {
       setConfirmState({ isOpen: false, propertyId: null, action: null, isProcessing: false });
+    }
+  };
+
+  const handleCreateProperty = async () => {
+    if (!createModal.data.title || !createModal.data.location || !createModal.data.price) {
+      error('Please fill in title, location, and price');
+      return;
+    }
+    setCreateModal(prev => ({ ...prev, isProcessing: true }));
+    try {
+      const newProp = await propertyService.createProperty(createModal.data);
+      setProperties(prev => [newProp, ...prev]);
+      success('Property created successfully');
+      setCreateModal({ isOpen: false, isProcessing: false, data: { title: '', location: '', price: '', type: 'Apartment', bedrooms: 1, bathrooms: 1, maxGuests: 2, description: '' } });
+    } catch (err) {
+      error('Failed to create property');
+      setCreateModal(prev => ({ ...prev, isProcessing: false }));
     }
   };
 
@@ -200,6 +228,13 @@ export default function PropertyList() {
               <Ban size={16} />
             </button>
           )}
+          <button 
+            className="p-1 text-slate-400 hover:text-red-600 transition-colors ml-1" 
+            title="Delete"
+            onClick={() => openConfirm(row.id, 'delete')}
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
       ),
     },
@@ -216,6 +251,10 @@ export default function PropertyList() {
           <Button variant="outline" size="sm">
             <Filter size={16} className="mr-2" />
             Filter
+          </Button>
+          <Button variant="primary" size="sm" onClick={() => setCreateModal(prev => ({ ...prev, isOpen: true }))}>
+            <Plus size={16} className="mr-2" />
+            Add Property
           </Button>
         </div>
       </div>
@@ -235,14 +274,16 @@ export default function PropertyList() {
         onClose={() => !confirmState.isProcessing && setConfirmState(prev => ({ ...prev, isOpen: false }))}
         onConfirm={handleConfirmAction}
         isLoading={confirmState.isProcessing}
-        title={confirmState.action === 'approve' ? 'Approve Property' : 'Suspend Property'}
+        title={confirmState.action === 'approve' ? 'Approve Property' : confirmState.action === 'suspend' ? 'Suspend Property' : 'Delete Property'}
         message={
           confirmState.action === 'approve' 
             ? 'Are you sure you want to approve this property? It will be visible to users and open for bookings.'
-            : 'Are you sure you want to suspend this property? It will be hidden from users and new bookings will be prevented.'
+            : confirmState.action === 'suspend'
+            ? 'Are you sure you want to suspend this property? It will be hidden from users and new bookings will be prevented.'
+            : 'Are you sure you want to completely delete this property? This action cannot be undone.'
         }
-        confirmText={confirmState.action === 'approve' ? 'Approve' : 'Suspend'}
-        isDestructive={confirmState.action === 'suspend'}
+        confirmText={confirmState.action === 'approve' ? 'Approve' : confirmState.action === 'suspend' ? 'Suspend' : 'Delete'}
+        isDestructive={confirmState.action === 'suspend' || confirmState.action === 'delete'}
       />
 
       {/* Reject Modal */}
@@ -372,6 +413,109 @@ export default function PropertyList() {
           </div>
         </Modal>
       )}
+
+      {/* Create Modal */}
+      <Modal 
+        isOpen={createModal.isOpen} 
+        onClose={() => !createModal.isProcessing && setCreateModal(prev => ({ ...prev, isOpen: false }))}
+        title="Add New Property"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Property Title *</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="e.g. Luxury Villa"
+                value={createModal.data.title}
+                onChange={(e) => setCreateModal(prev => ({ ...prev, data: { ...prev.data, title: e.target.value } }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Location *</label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="e.g. New York, USA"
+                value={createModal.data.location}
+                onChange={(e) => setCreateModal(prev => ({ ...prev, data: { ...prev.data, location: e.target.value } }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Price per night (USD) *</label>
+              <input
+                type="number"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+                placeholder="e.g. 150"
+                value={createModal.data.price}
+                onChange={(e) => setCreateModal(prev => ({ ...prev, data: { ...prev.data, price: e.target.value } }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Property Type</label>
+              <select
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                value={createModal.data.type}
+                onChange={(e) => setCreateModal(prev => ({ ...prev, data: { ...prev.data, type: e.target.value } }))}
+              >
+                <option value="Apartment">Apartment</option>
+                <option value="House">House</option>
+                <option value="Villa">Villa</option>
+                <option value="Cabin">Cabin</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Bedrooms</label>
+              <input
+                type="number"
+                min="1"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+                value={createModal.data.bedrooms}
+                onChange={(e) => setCreateModal(prev => ({ ...prev, data: { ...prev.data, bedrooms: parseInt(e.target.value) || 1 } }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Bathrooms</label>
+              <input
+                type="number"
+                min="1"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+                value={createModal.data.bathrooms}
+                onChange={(e) => setCreateModal(prev => ({ ...prev, data: { ...prev.data, bathrooms: parseInt(e.target.value) || 1 } }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Max Guests</label>
+              <input
+                type="number"
+                min="1"
+                className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+                value={createModal.data.maxGuests}
+                onChange={(e) => setCreateModal(prev => ({ ...prev, data: { ...prev.data, maxGuests: parseInt(e.target.value) || 1 } }))}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Description</label>
+            <textarea
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"
+              rows={3}
+              placeholder="Enter property description..."
+              value={createModal.data.description}
+              onChange={(e) => setCreateModal(prev => ({ ...prev, data: { ...prev.data, description: e.target.value } }))}
+            ></textarea>
+          </div>
+          <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setCreateModal(prev => ({ ...prev, isOpen: false }))} disabled={createModal.isProcessing}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleCreateProperty} isLoading={createModal.isProcessing}>
+              Create Property
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
