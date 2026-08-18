@@ -22,7 +22,9 @@ export type TimeFilter = 'Today' | '7 Days' | '30 Days' | 'This Year';
 export const dashboardService = {
   getMetrics: async (filter: TimeFilter = 'This Year'): Promise<DashboardMetrics> => {
     try {
-      return await fetchApi(`/dashboard/metrics?filter=${encodeURIComponent(filter)}`);
+      const fetchPromise = fetchApi(`/dashboard/metrics?filter=${encodeURIComponent(filter)}`);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
+      return await Promise.race([fetchPromise, timeoutPromise]) as DashboardMetrics;
     } catch (error) {
       console.warn('Dashboard API failed (likely backend not deployed yet), falling back to mock data', error);
       
