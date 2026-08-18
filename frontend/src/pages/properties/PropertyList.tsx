@@ -104,7 +104,11 @@ export default function PropertyList() {
     }
     setCreateModal(prev => ({ ...prev, isProcessing: true }));
     try {
-      const newProp = await propertyService.createProperty(createModal.data);
+      const payload = {
+        ...createModal.data,
+        price: Number(createModal.data.price)
+      };
+      const newProp = await propertyService.createProperty(payload);
       setProperties(prev => [newProp, ...prev]);
       success('Property created successfully');
       setCreateModal({ isOpen: false, isProcessing: false, data: { title: '', location: '', price: '', type: 'Apartment', bedrooms: 1, bathrooms: 1, maxGuests: 2, description: '' } });
