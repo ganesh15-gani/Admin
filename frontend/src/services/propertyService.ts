@@ -19,7 +19,7 @@ export const propertyService = {
       ];
 
       const mockProperties = [];
-      for (let i = 0; i < 48; i++) {
+      for (let i = 0; i < 42; i++) {
         const base = baseProperties[i % baseProperties.length];
         mockProperties.push({
           ...base,
