@@ -78,6 +78,32 @@ app.delete('/api/vendors/:id', async (req, res) => {
   }
 });
 
+// BANK ACCOUNT ROUTES
+app.get('/api/bank-accounts', async (req, res) => {
+  try {
+    const accounts = await prisma.bankAccount.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(accounts);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch bank accounts' });
+  }
+});
+
+app.put('/api/bank-accounts/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const account = await prisma.bankAccount.update({
+      where: { id },
+      data: { status }
+    });
+    res.json(account);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update bank account status' });
+  }
+});
+
 app.get('/api/seed-db', async (req, res) => {
   try {
     console.log('Running prisma db push...');
@@ -142,6 +168,38 @@ app.get('/api/seed-db', async (req, res) => {
         }
       }
     });
+
+    console.log('Seeding Vendors & Bank Accounts...');
+    const vendors = [];
+    for (let i = 1; i <= 5; i++) {
+      const vendor = await prisma.vendor.create({
+        data: {
+          name: `Vendor Partner ${i}`,
+          email: `vendor${i}@stayzen.com`,
+          phone: `+1 555 010${i}`,
+          companyName: `Luxury Stays ${i} LLC`,
+          status: i % 3 === 0 ? 'Pending' : 'Active',
+          propertiesCount: Math.floor(Math.random() * 5) + 1,
+          rating: 4.5 + (Math.random() * 0.5),
+          joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          kycStatus: i % 3 === 0 ? 'Pending' : 'Verified'
+        }
+      });
+      vendors.push(vendor);
+
+      await prisma.bankAccount.create({
+        data: {
+          vendorId: vendor.id,
+          vendorName: vendor.name,
+          bankName: ['Chase', 'Bank of America', 'Wells Fargo', 'Citi', 'US Bank'][i % 5],
+          accountType: i % 2 === 0 ? 'Checking' : 'Savings',
+          accountNumber: `**** **** **** ${1000 + i}`,
+          accountHolder: vendor.name,
+          status: i % 2 === 0 ? 'Linked' : 'Pending',
+          swiftCode: `SWIFT${100 + i}US`
+        }
+      });
+    }
 
     console.log('Seeding Admins...');
     const hashedPassword = await bcrypt.hash('admin123', 10);

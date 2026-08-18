@@ -1,179 +1,203 @@
-import React, { useState } from 'react';
-import { Landmark, CheckCircle, XCircle, ExternalLink, ShieldCheck } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import React, { useEffect, useState } from 'react';
+import { Landmark, CheckCircle, XCircle, ExternalLink, ShieldCheck, Clock, Ban } from 'lucide-react';
+import { bankApprovalService, type BankAccount } from '../../services/bankApprovalService';
+import { DataTable, type Column } from '../../components/ui/DataTable';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
-import { useToast } from '../../components/ui/ToastContext';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { delay } from '../../services/apiClient';
-
-interface BankRequest {
-  id: string;
-  vendorName: string;
-  bankName: string;
-  accountType: string;
-  accountNumber: string;
-  accountHolder: string;
-  status: 'Pending' | 'Linked' | 'Rejected';
-}
-
-const initialRequests: BankRequest[] = [
-  {
-    id: 'req-1',
-    vendorName: 'Global Stays LLC',
-    bankName: 'HDFC Bank',
-    accountType: 'Current Account',
-    accountNumber: '**** **** 4592',
-    accountHolder: 'Robert Johnson',
-    status: 'Pending'
-  },
-  {
-    id: 'req-2',
-    vendorName: 'City Escapes',
-    bankName: 'ICICI Bank',
-    accountType: 'Savings Account',
-    accountNumber: '**** **** 1103',
-    accountHolder: 'Alice Smith',
-    status: 'Pending'
-  }
-];
+import { useToast } from '../../components/ui/ToastContext';
 
 export default function BankApprovals() {
-  const [requests, setRequests] = useState<BankRequest[]>(initialRequests);
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Dialog state
   const [confirmState, setConfirmState] = useState<{
     isOpen: boolean;
-    requestId: string | null;
+    accountId: string | null;
     action: 'approve' | 'reject' | null;
     isProcessing: boolean;
-  }>({ isOpen: false, requestId: null, action: null, isProcessing: false });
+  }>({ isOpen: false, accountId: null, action: null, isProcessing: false });
 
   const { success, error } = useToast();
 
+  const loadAccounts = async () => {
+    try {
+      setLoading(true);
+      const data = await bankApprovalService.getBankAccounts();
+      setAccounts(data);
+    } catch (err) {
+      error('Failed to load bank accounts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAccounts();
+  }, []);
+
   const openConfirm = (id: string, action: 'approve' | 'reject') => {
-    setConfirmState({ isOpen: true, requestId: id, action, isProcessing: false });
+    setConfirmState({ isOpen: true, accountId: id, action, isProcessing: false });
   };
 
   const handleConfirmAction = async () => {
-    const { requestId, action } = confirmState;
-    if (!requestId || !action) return;
+    const { accountId, action } = confirmState;
+    if (!accountId || !action) return;
 
     setConfirmState(prev => ({ ...prev, isProcessing: true }));
 
     try {
-      await delay(1200); // Simulate network/Razorpay API call
-      
       if (action === 'approve') {
-        setRequests(prev => prev.map(req => req.id === requestId ? { ...req, status: 'Linked' } : req));
-        success('Bank account successfully linked to Razorpay Payouts!');
-      } else {
-        setRequests(prev => prev.map(req => req.id === requestId ? { ...req, status: 'Rejected' } : req));
-        success('Bank linking request rejected.');
+        await bankApprovalService.approveAccount(accountId);
+        success('Bank account approved and linked successfully');
+      } else if (action === 'reject') {
+        await bankApprovalService.rejectAccount(accountId);
+        success('Bank account rejected');
       }
+      
+      // Update local state without reloading everything for better UX
+      const newStatus = action === 'approve' ? 'Linked' : 'Rejected';
+      setAccounts(prev => prev.map(a => a.id === accountId ? { ...a, status: newStatus } : a));
     } catch (err) {
-      error(`Failed to ${action} request`);
+      error(`Failed to ${action} bank account`);
     } finally {
-      setConfirmState({ isOpen: false, requestId: null, action: null, isProcessing: false });
+      setConfirmState({ isOpen: false, accountId: null, action: null, isProcessing: false });
     }
   };
 
+  const filteredAccounts = accounts.filter(a => 
+    a.vendorName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    a.bankName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.accountHolder.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const columns: Column<BankAccount>[] = [
+    {
+      header: 'Vendor',
+      accessor: (row) => (
+        <div className="flex items-center space-x-3">
+          <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0 text-indigo-600 shadow-sm border border-indigo-100">
+            <Landmark size={20} />
+          </div>
+          <div>
+            <div className="font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">{row.vendorName}</div>
+            <div className="text-xs text-slate-500">ID: {row.id.substring(0, 8)}</div>
+          </div>
+        </div>
+      )
+    },
+    {
+      header: 'Bank Details',
+      accessor: (row) => (
+        <div>
+          <div className="font-medium text-slate-800">{row.bankName}</div>
+          <div className="text-xs text-slate-500">{row.accountType}</div>
+        </div>
+      )
+    },
+    {
+      header: 'Account Info',
+      accessor: (row) => (
+        <div>
+          <div className="font-mono text-sm text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-100 inline-block">
+            {row.accountNumber}
+          </div>
+          <div className="text-xs text-slate-500 mt-1">{row.accountHolder}</div>
+        </div>
+      )
+    },
+    {
+      header: 'Status',
+      accessor: (row) => {
+        if (row.status === 'Linked') return <Badge variant="success">Linked</Badge>;
+        if (row.status === 'Rejected') return <Badge variant="danger">Rejected</Badge>;
+        return <Badge variant="warning">Pending Review</Badge>;
+      }
+    },
+    {
+      header: 'Actions',
+      className: 'text-right',
+      accessor: (row) => (
+        <div className="flex justify-end space-x-2">
+          <button 
+            className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+            title="View Document"
+          >
+            <ExternalLink size={18} />
+          </button>
+          {row.status === 'Pending' && (
+            <>
+              <button 
+                onClick={(e) => { e.stopPropagation(); openConfirm(row.id, 'approve'); }}
+                className="p-1.5 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                title="Approve Account"
+              >
+                <CheckCircle size={18} />
+              </button>
+              <button 
+                onClick={(e) => { e.stopPropagation(); openConfirm(row.id, 'reject'); }}
+                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                title="Reject Account"
+              >
+                <XCircle size={18} />
+              </button>
+            </>
+          )}
+        </div>
+      )
+    }
+  ];
+
+  // Calculate pending count for header
+  const pendingCount = accounts.filter(a => a.status === 'Pending').length;
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 animate-fade-in pb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center">
-            <Landmark className="mr-2 text-brand-600" /> Bank Approvals
+            <Landmark className="mr-2 text-indigo-600" /> Bank Approvals
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Review vendor bank details to link with Razorpay payouts.</p>
+          <p className="text-sm text-slate-500 mt-1">Review and approve vendor bank accounts for payouts.</p>
         </div>
+        {pendingCount > 0 && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2 rounded-lg flex items-center text-sm font-medium">
+            <Clock size={16} className="mr-2 text-amber-500" />
+            {pendingCount} Pending Request{pendingCount !== 1 ? 's' : ''}
+          </div>
+        )}
       </div>
 
-      <Card className="border-gray-100 shadow-sm">
-        <CardHeader className="border-b border-gray-50 flex flex-row items-center justify-between">
-          <CardTitle>Account Linking Requests</CardTitle>
-          <Badge variant="info">{requests.filter(r => r.status === 'Pending').length} Pending</Badge>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="divide-y divide-gray-50">
-            {requests.map((request) => (
-              <div key={request.id} className="p-5 flex flex-col md:flex-row md:items-center justify-between hover:bg-gray-50 transition-colors gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-3">
-                    <h3 className="font-semibold text-slate-800 text-lg">{request.vendorName}</h3>
-                    <Badge 
-                      variant={request.status === 'Linked' ? 'success' : request.status === 'Rejected' ? 'danger' : 'warning'}
-                    >
-                      {request.status === 'Pending' ? 'Action Required' : request.status}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-sm">
-                    <div className="flex text-slate-600">
-                      <span className="w-24 text-slate-400">Bank:</span>
-                      <span className="font-medium text-slate-700">{request.bankName}</span>
-                    </div>
-                    <div className="flex text-slate-600">
-                      <span className="w-24 text-slate-400">Type:</span>
-                      <span className="font-medium text-slate-700">{request.accountType}</span>
-                    </div>
-                    <div className="flex text-slate-600">
-                      <span className="w-24 text-slate-400">Account:</span>
-                      <span className="font-medium text-slate-700 font-mono tracking-wider">{request.accountNumber}</span>
-                    </div>
-                    <div className="flex text-slate-600">
-                      <span className="w-24 text-slate-400">Holder:</span>
-                      <span className="font-medium text-slate-700">{request.accountHolder}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex space-x-2 self-start md:self-center shrink-0">
-                  {request.status === 'Pending' ? (
-                    <>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-red-600 hover:bg-red-50 hover:border-red-200"
-                        onClick={() => openConfirm(request.id, 'reject')}
-                      >
-                        <XCircle size={14} className="mr-1" /> Reject
-                      </Button>
-                      <Button 
-                        variant="primary" 
-                        size="sm" 
-                        className="bg-brand-600 hover:bg-brand-700 text-white"
-                        onClick={() => openConfirm(request.id, 'approve')}
-                      >
-                        <ExternalLink size={14} className="mr-1" /> Link to Razorpay
-                      </Button>
-                    </>
-                  ) : request.status === 'Linked' ? (
-                    <div className="flex items-center text-green-600 bg-green-50 px-4 py-2 rounded-lg font-medium text-sm border border-green-100">
-                      <ShieldCheck size={18} className="mr-2" />
-                      Razorpay Active
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <DataTable
+        columns={columns}
+        data={filteredAccounts}
+        keyExtractor={(row) => row.id}
+        isLoading={loading}
+        onSearch={setSearchQuery}
+        searchPlaceholder="Search by vendor, bank, or account holder..."
+        emptyMessage={searchQuery ? "No accounts match your search." : "No bank accounts found."}
+      />
 
+      {/* Confirmation Dialogs */}
       <ConfirmDialog
         isOpen={confirmState.isOpen}
         onClose={() => !confirmState.isProcessing && setConfirmState(prev => ({ ...prev, isOpen: false }))}
         onConfirm={handleConfirmAction}
-        isLoading={confirmState.isProcessing}
-        title={confirmState.action === 'approve' ? 'Link Bank Account' : 'Reject Request'}
+        title={
+          confirmState.action === 'approve' ? 'Approve Bank Account' : 'Reject Bank Account'
+        }
         message={
           confirmState.action === 'approve' 
-            ? 'This will initiate a secure connection to Razorpay to link this vendor\'s bank account. They will be authorized to receive payouts. Proceed?' 
-            : 'Are you sure you want to reject this linking request? The vendor will need to submit new details.'
+            ? 'Are you sure you want to approve and link this bank account? The vendor will be able to receive payouts.' 
+            : 'Are you sure you want to reject this bank account? The vendor will need to submit new details.'
         }
-        confirmText={confirmState.action === 'approve' ? 'Confirm & Link' : 'Reject Request'}
+        confirmText={
+          confirmState.action === 'approve' ? 'Approve & Link' : 'Reject Account'
+        }
         isDestructive={confirmState.action === 'reject'}
+        isLoading={confirmState.isProcessing}
       />
     </div>
   );

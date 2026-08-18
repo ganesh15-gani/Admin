@@ -34,6 +34,20 @@ model Vendor {
   updatedAt       DateTime @default(now()) @updatedAt
 }
 
+model BankAccount {
+  id              String   @id @default(uuid())
+  vendorId        String
+  vendorName      String
+  bankName        String
+  accountType     String
+  accountNumber   String
+  accountHolder   String
+  status          String   @default("Pending") // Pending, Linked, Rejected
+  swiftCode       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+}
+
 model Property {
   id             String   @id @default(uuid())
   title          String
