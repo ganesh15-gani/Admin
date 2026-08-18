@@ -14,6 +14,7 @@ export default function PropertyList() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   
   // Dialog state
   const [confirmState, setConfirmState] = useState<{
@@ -132,10 +133,12 @@ export default function PropertyList() {
     }
   };
 
-  const filteredProperties = properties.filter(p => 
-    p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    p.ownerName.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProperties = properties.filter(p => {
+    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          p.ownerName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -248,10 +251,25 @@ export default function PropertyList() {
           <p className="text-sm text-slate-500 mt-1">Manage property listings, approvals, and quality control.</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button variant="outline" size="sm">
-            <Filter size={16} className="mr-2" />
-            Filter
-          </Button>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+              <Filter size={16} />
+            </div>
+            <select
+              className="pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none bg-white hover:bg-slate-50 cursor-pointer transition-colors"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="All">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Suspended">Suspended</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-slate-400">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
           <Button variant="primary" size="sm" onClick={() => setCreateModal(prev => ({ ...prev, isOpen: true }))}>
             <Plus size={16} className="mr-2" />
             Add Property
