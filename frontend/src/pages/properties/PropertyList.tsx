@@ -147,8 +147,19 @@ export default function PropertyList() {
   };
 
   const filteredProperties = properties.filter(p => {
-    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          p.ownerName.toLowerCase().includes(searchQuery.toLowerCase());
+    const sq = searchQuery.toLowerCase().trim();
+    
+    let matchesSearch = false;
+    if (sq === 'indian' || sq === 'india') {
+      matchesSearch = p.location.toLowerCase().includes('india');
+    } else if (sq === 'overseas') {
+      matchesSearch = !p.location.toLowerCase().includes('india');
+    } else {
+      matchesSearch = p.title.toLowerCase().includes(sq) || 
+                      p.ownerName.toLowerCase().includes(sq) ||
+                      p.location.toLowerCase().includes(sq);
+    }
+
     const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
