@@ -125,6 +125,7 @@ export default function Dashboard() {
           trend={metrics?.trends.properties}
           icon={<Home size={20} />} 
           loading={loading}
+          to="/properties"
         />
         <StatCard 
           title="Active Bookings" 

@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { cn } from '../../../utils/cn';
 
@@ -9,9 +10,10 @@ interface StatCardProps {
   icon: React.ReactNode;
   trend?: number;
   loading?: boolean;
+  to?: string;
 }
 
-export function StatCard({ title, value, icon, trend, loading }: StatCardProps) {
+export function StatCard({ title, value, icon, trend, loading, to }: StatCardProps) {
   if (loading) {
     return (
       <Card className="overflow-hidden border-gray-100 shadow-sm">
@@ -28,14 +30,21 @@ export function StatCard({ title, value, icon, trend, loading }: StatCardProps) 
     );
   }
 
-  return (
-    <Card className="overflow-hidden border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group hover:-translate-y-1 relative">
+  const cardContent = (
+    <Card className="overflow-hidden border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group hover:-translate-y-1 relative h-full">
       <div className="absolute inset-0 bg-gradient-to-br from-white to-gray-50/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
       <CardContent className="p-6 relative z-10">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-slate-500">{title}</h3>
-          <div className="p-2.5 bg-brand-50 text-brand-600 rounded-xl group-hover:bg-brand-600 group-hover:text-white transition-colors duration-300">
-            {icon}
+          <div className="flex items-center">
+            {to && (
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity mr-2 text-brand-600">
+                <ArrowRight size={16} />
+              </span>
+            )}
+            <div className="p-2.5 bg-brand-50 text-brand-600 rounded-xl group-hover:bg-brand-600 group-hover:text-white transition-colors duration-300">
+              {icon}
+            </div>
           </div>
         </div>
         <div className="flex items-baseline space-x-3">
@@ -55,4 +64,10 @@ export function StatCard({ title, value, icon, trend, loading }: StatCardProps) 
       </CardContent>
     </Card>
   );
+
+  if (to) {
+    return <Link to={to} className="block">{cardContent}</Link>;
+  }
+  
+  return cardContent;
 }
