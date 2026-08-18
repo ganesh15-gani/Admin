@@ -191,7 +191,7 @@ app.get('/api/seed-db', async (req, res) => {
         data: {
           vendorId: vendor.id,
           vendorName: vendor.name,
-          bankName: ['Chase', 'Bank of America', 'Wells Fargo', 'Citi', 'US Bank'][i % 5],
+          bankName: ['Chase', 'Bank of America', 'Wells Fargo', 'Citi', 'US Bank'][i % 5] || 'Chase',
           accountType: i % 2 === 0 ? 'Checking' : 'Savings',
           accountNumber: `**** **** **** ${1000 + i}`,
           accountHolder: vendor.name,
