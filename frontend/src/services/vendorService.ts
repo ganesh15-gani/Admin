@@ -34,7 +34,11 @@ export const vendorService = {
       // Load from localStorage if available to persist between page loads
       const stored = localStorage.getItem('stayzen_mock_vendors');
       if (stored) {
-        return JSON.parse(stored) as Vendor[];
+        try {
+          return JSON.parse(stored) as Vendor[];
+        } catch (parseError) {
+          localStorage.removeItem('stayzen_mock_vendors');
+        }
       }
 
       const mockVendors = [];

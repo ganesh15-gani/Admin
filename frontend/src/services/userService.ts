@@ -3,7 +3,27 @@ import { fetchApi } from './apiClient';
 
 export const userService = {
   getUsers: async (): Promise<User[]> => {
-    return fetchApi('/users');
+    try {
+      const fetchPromise = fetchApi('/users');
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
+      return await Promise.race([fetchPromise, timeoutPromise]) as User[];
+    } catch (e) {
+      console.warn('User API failed, falling back to mock data');
+      const stored = localStorage.getItem('stayzen_mock_users');
+      if (stored) {
+        try {
+          return JSON.parse(stored) as User[];
+        } catch (parseError) {
+          localStorage.removeItem('stayzen_mock_users');
+        }
+      }
+      
+      const mockUsers = [
+        { id: '1', name: 'Alice Smith', email: 'alice@example.com', role: 'Host', status: 'Active', joinDate: '2025-01-10' },
+        { id: '2', name: 'Bob Jones', email: 'bob@example.com', role: 'Guest', status: 'Pending', joinDate: '2025-02-15' },
+      ];
+      return mockUsers as any; // Type coercion for basic mockup
+    }
   },
   
   suspendUser: async (id: string): Promise<void> => {
