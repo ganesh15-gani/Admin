@@ -138,18 +138,19 @@ export const authService = {
   },
 
   hasPermission: (module: string): boolean => {
+    const user = authService.getCurrentUser();
     // If it's Super Admin or dev mode, allow all
-    if (currentUser?.email === 'admin@stayzen.com' || currentUser?.role === 'Super Admin') return true;
+    if (user?.email === 'admin@stayzen.com' || user?.role === 'Super Admin') return true;
     
     // For normal staff, we check local storage for their effective permissions
     // Since the system uses local mock state when backend is sleeping
     const storedStaff = localStorage.getItem('stayzen_staff');
     const storedRoles = localStorage.getItem('stayzen_roles');
     
-    if (storedStaff && storedRoles && currentUser) {
+    if (storedStaff && storedRoles && user) {
       const staffList = JSON.parse(storedStaff);
       const rolesList = JSON.parse(storedRoles);
-      const staffMember = staffList.find((s: any) => s.email === currentUser?.email);
+      const staffMember = staffList.find((s: any) => s.email === user?.email);
       
       if (staffMember) {
         const role = rolesList.find((r: any) => r.id === staffMember.roleId);
@@ -165,6 +166,6 @@ export const authService = {
     }
     
     // Legacy fallback
-    return currentUser?.permissions?.some(p => p.module === module || p.module === 'System') ?? false;
+    return user?.permissions?.some(p => p.module === module || p.module === 'System') ?? false;
   }
 };
