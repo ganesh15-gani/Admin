@@ -22,6 +22,7 @@ import CMS from './pages/cms/CMS';
 import Settings from './pages/settings/Settings';
 import SuperAdmin from './pages/settings/SuperAdmin';
 import System from './pages/settings/System';
+import StaffList from './pages/settings/StaffList';
 
 import AccessDenied from './pages/auth/AccessDenied';
 
@@ -79,6 +80,7 @@ function App() {
           
           <Route path="settings" element={<ProtectedRoute requiredModule="Settings"><Settings /></ProtectedRoute>} />
           <Route path="settings/admins" element={<ProtectedRoute requiredModule="System"><AdminManagement /></ProtectedRoute>} />
+          <Route path="settings/staff" element={<ProtectedRoute requiredModule="System"><StaffList /></ProtectedRoute>} />
           <Route path="super-admin" element={<ProtectedRoute requiredModule="System"><SuperAdmin /></ProtectedRoute>} />
           <Route path="system" element={<ProtectedRoute requiredModule="System"><System /></ProtectedRoute>} />
         </Route>

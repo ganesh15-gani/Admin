@@ -99,8 +99,10 @@ model Admin {
   status         String   @default("Pending") // Pending, Active, Suspended, Rejected
   isApproved     Boolean  @default(false)
   avatar         String?
+  department     String?  // e.g., 'Sales', 'Development'
   roleId         String?
   role           Role?    @relation(fields: [roleId], references: [id])
+  customPermissions Json? // Individual overrides: { "Dashboard": true, "Sales": false }
   createdAt      DateTime @default(now())
   updatedAt      DateTime @default(now()) @updatedAt
   lastLogin      DateTime?

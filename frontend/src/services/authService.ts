@@ -137,16 +137,34 @@ export const authService = {
     return !!localStorage.getItem('admin_token') && !!authService.getCurrentUser();
   },
 
-  hasPermission: (module: string, action: string = 'View'): boolean => {
-    const user = authService.getCurrentUser();
-    if (!user || !user.permissions || !Array.isArray(user.permissions)) return false;
+  hasPermission: (module: string): boolean => {
+    // If it's Super Admin or dev mode, allow all
+    if (currentUser?.email === 'admin@stayzen.com' || currentUser?.role === 'Super Admin') return true;
     
-    // Check system full access
-    if (user.permissions.some(p => p.module === 'System' && p.action === '*')) {
-      return true;
+    // For normal staff, we check local storage for their effective permissions
+    // Since the system uses local mock state when backend is sleeping
+    const storedStaff = localStorage.getItem('stayzen_staff');
+    const storedRoles = localStorage.getItem('stayzen_roles');
+    
+    if (storedStaff && storedRoles && currentUser) {
+      const staffList = JSON.parse(storedStaff);
+      const rolesList = JSON.parse(storedRoles);
+      const staffMember = staffList.find((s: any) => s.email === currentUser?.email);
+      
+      if (staffMember) {
+        const role = rolesList.find((r: any) => r.id === staffMember.roleId);
+        let effective = new Set<string>(role ? role.permissions : []);
+        if (staffMember.customPermissions) {
+          Object.entries(staffMember.customPermissions).forEach(([m, isAllowed]) => {
+            if (isAllowed) effective.add(m);
+            else effective.delete(m);
+          });
+        }
+        return effective.has(module);
+      }
     }
     
-    // Check specific permission
-    return user.permissions.some(p => p.module === module && (p.action === action || p.action === '*'));
+    // Legacy fallback
+    return currentUser?.permissions?.some(p => p.module === module || p.module === 'System') ?? false;
   }
 };
