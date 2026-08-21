@@ -59,8 +59,14 @@ export const authService = {
         let permissions: any[] = [{ id: '1', module: 'Dashboard', action: '*' }];
 
         if (email === 'admin@stayzen.com') { role = 'Super Admin'; name = 'Super Admin'; permissions = [{ id: '1', module: 'System', action: '*' }]; }
-        else if (email === 'marketing@stayzen.com' || email === 'marketing2@stayzen.com') { role = 'Marketing Team'; name = 'Marketing Manager'; }
-        else if (email === 'support@stayzen.com') { role = 'Support'; name = 'Support Agent'; }
+        else if (email === 'marketing@stayzen.com' || email === 'marketing2@stayzen.com') { 
+          role = 'Marketing Team'; name = 'Marketing Manager'; 
+          permissions = [{ id: '1', module: 'Dashboard', action: '*' }, { id: '2', module: 'CMS', action: '*' }, { id: '3', module: 'Reports', action: '*' }, { id: '4', module: 'Notifications', action: '*' }];
+        }
+        else if (email === 'support@stayzen.com') { 
+          role = 'Support'; name = 'Support Agent'; 
+          permissions = [{ id: '1', module: 'Dashboard', action: '*' }, { id: '2', module: 'Users', action: '*' }, { id: '3', module: 'Support', action: '*' }, { id: '4', module: 'Bookings', action: '*' }];
+        }
         else {
           // If they created a custom one, check mock admins
           const mockAdmins = localStorage.getItem('stayzen_mock_admins');
@@ -230,8 +236,13 @@ export const authService = {
       const staffMember = staffList.find((s: any) => s.email === user?.email);
       
       if (staffMember) {
-        const role = rolesList.find((r: any) => r.id === staffMember.roleId);
+        // Safe match for both string and number IDs from legacy cache
+        const role = rolesList.find((r: any) => String(r.id) === String(staffMember.roleId));
         let effective = new Set<string>(role ? role.permissions : []);
+        
+        // Everyone in staff should at least see the Dashboard
+        effective.add('Dashboard');
+
         if (staffMember.customPermissions) {
           Object.entries(staffMember.customPermissions).forEach(([m, isAllowed]) => {
             if (isAllowed) effective.add(m);
@@ -243,6 +254,7 @@ export const authService = {
     }
     
     // Legacy fallback
+    if (module === 'Dashboard') return true;
     return user?.permissions?.some(p => p.module === module || p.module === 'System') ?? false;
   }
 };
