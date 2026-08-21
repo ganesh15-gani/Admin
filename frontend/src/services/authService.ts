@@ -85,7 +85,7 @@ export const authService = {
                   const sRoles = JSON.parse(storedRoles);
                   const staffMember = sStaff.find((s: any) => s.email === email);
                   if (staffMember) {
-                    const r = sRoles.find((r: any) => String(r.id) === String(staffMember.roleId));
+                    const r = sRoles.find((r: any) => String(r.id || r._id) === String(staffMember.roleId));
                     if (r) {
                       role = r.name;
                       
@@ -258,8 +258,8 @@ export const authService = {
       const staffMember = staffList.find((s: any) => s.email === user?.email);
       
       if (staffMember) {
-        // Safe match for both string and number IDs from legacy cache
-        const role = rolesList.find((r: any) => String(r.id) === String(staffMember.roleId));
+        // Safe match for both string and number IDs from legacy cache, and _id from mongo
+        const role = rolesList.find((r: any) => String(r.id || r._id) === String(staffMember.roleId));
         
         // Handle legacy roles that didn't have a permissions array
         const rolePerms = (role && Array.isArray(role.permissions)) ? role.permissions : [];
