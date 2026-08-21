@@ -260,7 +260,19 @@ export const authService = {
       
       if (staffMember) {
         // Safe match for both string and number IDs from legacy cache, and _id from mongo
-        const role = rolesList.find((r: any) => String(r.id || r._id) === String(staffMember.roleId));
+        let role = rolesList.find((r: any) => String(r.id || r._id) === String(staffMember.roleId));
+        
+        // If backend wiped the local role ID during a merge, fallback to the hardcoded name mapping
+        if (!role) {
+          const nameMap: Record<string, string> = {
+            'role-1': 'Super Admin', 'role-2': 'Sales Staff', 'role-3': 'Support Staff',
+            'role-4': 'Development', 'role-5': 'Marketing Team', 'role-6': 'Accounting / Finance'
+          };
+          const fallbackName = nameMap[String(staffMember.roleId)];
+          if (fallbackName) {
+            role = rolesList.find((r: any) => r.name === fallbackName);
+          }
+        }
         
         // Handle legacy roles that didn't have a permissions array
         const rolePerms = (role && Array.isArray(role.permissions)) ? role.permissions : [];
