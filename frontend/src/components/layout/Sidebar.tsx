@@ -40,7 +40,8 @@ const navItems = [
   { name: 'Notifications', path: '/notifications', icon: Bell, module: 'Notifications' },
   { name: 'Reports', path: '/reports', icon: BarChart, module: 'Reports' },
   { name: 'CMS', path: '/cms', icon: FileText, module: 'CMS' },
-  { name: 'Staff Permissions', path: '/settings/staff', icon: ShieldCheck, module: 'System' },
+  { name: 'Admin Approvals', path: '/settings/admins', icon: ShieldCheck, module: 'System' },
+  { name: 'Staff Permissions', path: '/settings/staff', icon: Users, module: 'System' },
   { name: 'Settings', path: '/settings', icon: Settings, module: 'Settings' },
   { name: 'System', path: '/system', icon: Activity, module: 'System' },
 ];
