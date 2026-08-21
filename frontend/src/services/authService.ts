@@ -170,7 +170,16 @@ export const authService = {
       // Also add to staff list for permissions
       const mockStaff = localStorage.getItem('stayzen_staff');
       let parsedStaff = [];
-      if (mockStaff) { try { parsedStaff = JSON.parse(mockStaff); } catch (e) {} }
+      if (mockStaff) { 
+        try { parsedStaff = JSON.parse(mockStaff); } catch (e) {} 
+      } else {
+        parsedStaff = [
+          { id: 'staff-1', name: 'Alice Admin', email: 'alice@stayzen.com', department: 'Management', roleId: 'role-1', status: 'Active', customPermissions: null },
+          { id: 'staff-2', name: 'Bob Sales', email: 'bob@stayzen.com', department: 'Sales', roleId: 'role-2', status: 'Active', customPermissions: null },
+          { id: 'staff-3', name: 'Charlie Support', email: 'charlie@stayzen.com', department: 'Support', roleId: 'role-3', status: 'Active', customPermissions: { 'Properties': true } },
+          { id: 'staff-4', name: 'Dave Dev', email: 'dave@stayzen.com', department: 'Development', roleId: 'role-4', status: 'Active', customPermissions: { 'Sales': false } }
+        ];
+      }
       parsedStaff.push({
         id: newAdmin.id,
         name, email, department: 'General', roleId: 'role-4', status: 'Pending', customPermissions: null
