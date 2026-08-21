@@ -73,6 +73,42 @@ export const staffService = {
     }
   },
 
+  createRole: async (name: string, permissions: string[]): Promise<StaffRole> => {
+    try {
+      const fetchPromise = fetchApi('/roles', {
+        method: 'POST',
+        body: JSON.stringify({ name, permissions })
+      });
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
+      return await Promise.race([fetchPromise, timeoutPromise]) as StaffRole;
+    } catch (e) {
+      const stored = localStorage.getItem('stayzen_roles');
+      const roles = stored ? JSON.parse(stored) : [...mockRoles];
+      const newRole: StaffRole = {
+        id: `role-${Date.now()}`,
+        name,
+        permissions
+      };
+      roles.push(newRole);
+      localStorage.setItem('stayzen_roles', JSON.stringify(roles));
+      return newRole;
+    }
+  },
+
+  deleteRole: async (roleId: string): Promise<void> => {
+    try {
+      await fetchApi(`/roles/${roleId}`, { method: 'DELETE' });
+    } catch (e) {
+      const stored = localStorage.getItem('stayzen_roles');
+      if (stored) {
+        const roles = JSON.parse(stored) as StaffRole[];
+        const updated = roles.filter(r => r.id !== roleId);
+        localStorage.setItem('stayzen_roles', JSON.stringify(updated));
+      }
+    }
+  },
+
+
   getEffectivePermissions: (staff: StaffMember, roles: StaffRole[]): string[] => {
     const role = roles.find(r => r.id === staff.roleId);
     let effective = new Set<string>(role ? role.permissions : []);
