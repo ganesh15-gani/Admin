@@ -20,9 +20,9 @@ export const userService = {
         }
       }
       
-      const mockUsers = [
-        { id: '1', name: 'Alice Smith', email: 'alice@example.com', role: 'Host', status: 'Active', joinDate: '2025-01-10' },
-        { id: '2', name: 'Bob Jones', email: 'bob@example.com', role: 'Guest', status: 'Pending', joinDate: '2025-02-15' },
+      const mockUsers: User[] = [
+        { id: '1', name: 'Alice Smith', email: 'alice@example.com', phone: '+1 234 567 8900', role: 'Host', status: 'Active', verification: 'Verified', joinedDate: '2025-01-10', lastLogin: '2025-02-15', bookingsCount: 12 } as any,
+        { id: '2', name: 'Bob Jones', email: 'bob@example.com', phone: '+1 987 654 3210', role: 'Guest', status: 'Pending', verification: 'Pending', joinedDate: '2025-02-15', lastLogin: '2025-02-16', bookingsCount: 0 } as any,
       ];
       return mockUsers as any; // Type coercion for basic mockup
     }

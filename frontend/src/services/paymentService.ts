@@ -21,10 +21,10 @@ export const paymentService = {
       }
       
       const mockPayments: Payment[] = [
-        { id: 'PAY-8821', bookingId: 'B-1001', amount: 1750, status: 'Completed', method: 'Credit Card', date: '2025-02-01', userEmail: 'john.doe@example.com' },
-        { id: 'PAY-8822', bookingId: 'B-1002', amount: 720, status: 'Pending', method: 'PayPal', date: '2025-02-02', userEmail: 'alice.smith@example.com' },
-        { id: 'PAY-8823', bookingId: 'B-1003', amount: 600, status: 'Refunded', method: 'Bank Transfer', date: '2025-02-03', userEmail: 'bob.jones@example.com' },
-        { id: 'PAY-8824', bookingId: 'B-1004', amount: 4250, status: 'Failed', method: 'Credit Card', date: '2025-02-04', userEmail: 'charlie.brown@example.com' },
+        { id: 'PAY-8821', amount: 1750, status: 'Completed', type: 'Booking', method: 'Credit Card', date: '2025-02-01', referenceId: 'B-1001', description: 'Booking payment for Royal Palace' },
+        { id: 'PAY-8822', amount: 720, status: 'Pending', type: 'Booking', method: 'PayPal', date: '2025-02-02', referenceId: 'B-1002', description: 'Booking payment for Serene Backwaters' },
+        { id: 'PAY-8823', amount: 600, status: 'Refunded', type: 'Refund', method: 'Bank Transfer', date: '2025-02-03', referenceId: 'B-1003', description: 'Refund for Himalayan Panorama' },
+        { id: 'PAY-8824', amount: 4250, status: 'Failed', type: 'Booking', method: 'Credit Card', date: '2025-02-04', referenceId: 'B-1004', description: 'Booking payment for Alpine Chalet' },
       ];
       return mockPayments;
     }

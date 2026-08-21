@@ -21,10 +21,10 @@ export const bookingService = {
       }
       
       const mockBookings: Booking[] = [
-        { id: 'B-1001', propertyName: 'Royal Palace Heritage', guestName: 'John Doe', hostName: 'Luxury Stays', checkIn: '2025-05-10', checkOut: '2025-05-15', amount: 1750, status: 'Confirmed', propertyId: '1', guestId: '1', hostId: '2', createdAt: '2025-02-01' },
-        { id: 'B-1002', propertyName: 'Serene Backwaters', guestName: 'Alice Smith', hostName: 'Coastal Retreats', checkIn: '2025-06-01', checkOut: '2025-06-05', amount: 720, status: 'Pending', propertyId: '2', guestId: '2', hostId: '3', createdAt: '2025-02-02' },
-        { id: 'B-1003', propertyName: 'Himalayan Panorama', guestName: 'Bob Jones', hostName: 'Alpine Escapes', checkIn: '2025-07-15', checkOut: '2025-07-20', amount: 600, status: 'Cancelled', propertyId: '3', guestId: '3', hostId: '4', createdAt: '2025-02-03' },
-        { id: 'B-1004', propertyName: 'Modern Alpine Chalet', guestName: 'Charlie Brown', hostName: 'Luxury Stays', checkIn: '2025-08-10', checkOut: '2025-08-15', amount: 4250, status: 'Refund Requested', propertyId: '4', guestId: '4', hostId: '2', createdAt: '2025-02-04' },
+        { id: 'B-1001', propertyTitle: 'Royal Palace Heritage', customerName: 'John Doe', vendorName: 'Luxury Stays', checkIn: '2025-05-10', checkOut: '2025-05-15', amount: 1750, status: 'Confirmed', paymentStatus: 'Paid' },
+        { id: 'B-1002', propertyTitle: 'Serene Backwaters', customerName: 'Alice Smith', vendorName: 'Coastal Retreats', checkIn: '2025-06-01', checkOut: '2025-06-05', amount: 720, status: 'Pending', paymentStatus: 'Pending' },
+        { id: 'B-1003', propertyTitle: 'Himalayan Panorama', customerName: 'Bob Jones', vendorName: 'Alpine Escapes', checkIn: '2025-07-15', checkOut: '2025-07-20', amount: 600, status: 'Cancelled', paymentStatus: 'Refunded' },
+        { id: 'B-1004', propertyTitle: 'Modern Alpine Chalet', customerName: 'Charlie Brown', vendorName: 'Luxury Stays', checkIn: '2025-08-10', checkOut: '2025-08-15', amount: 4250, status: 'Refund Requested', paymentStatus: 'Paid' },
       ];
       return mockBookings;
     }
