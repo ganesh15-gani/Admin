@@ -127,6 +127,13 @@ export const authService = {
       let parsed = [];
       if (mockAdmins) {
         try { parsed = JSON.parse(mockAdmins); } catch (e) {}
+      } else {
+        parsed = [
+          { id: '1', name: 'Super Admin', email: 'admin@stayzen.com', role: 'Super Admin', status: 'Active', isApproved: true, permissions: [] },
+          { id: '2', name: 'Marketing Manager', email: 'marketing@stayzen.com', role: 'Marketing Team', status: 'Active', isApproved: true, permissions: [] },
+          { id: '3', name: 'Support Agent', email: 'support@stayzen.com', role: 'Support', status: 'Active', isApproved: true, permissions: [] },
+          { id: '4', name: 'New Hire', email: 'newhire@stayzen.com', role: 'Staff', status: 'Pending', isApproved: false, permissions: [] }
+        ];
       }
       
       const exists = parsed.find((a: any) => a.email === email);

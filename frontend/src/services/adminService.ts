@@ -15,12 +15,15 @@ export const adminService = {
       if (stored) {
         try { return JSON.parse(stored) as AuthUser[]; } catch (e) {}
       }
-      return [
+      
+      const defaults = [
         { id: '1', name: 'Super Admin', email: 'admin@stayzen.com', role: 'Super Admin', status: 'Active', isApproved: true, permissions: [] },
         { id: '2', name: 'Marketing Manager', email: 'marketing@stayzen.com', role: 'Marketing Team', status: 'Active', isApproved: true, permissions: [] },
         { id: '3', name: 'Support Agent', email: 'support@stayzen.com', role: 'Support', status: 'Active', isApproved: true, permissions: [] },
         { id: '4', name: 'New Hire', email: 'newhire@stayzen.com', role: 'Staff', status: 'Pending', isApproved: false, permissions: [] }
       ];
+      localStorage.setItem('stayzen_mock_admins', JSON.stringify(defaults));
+      return defaults;
     }
   },
   
@@ -52,6 +55,14 @@ export const adminService = {
           let parsed = JSON.parse(stored);
           parsed = parsed.map((a: any) => a.id === id ? { ...a, status, isApproved } : a);
           localStorage.setItem('stayzen_mock_admins', JSON.stringify(parsed));
+        } catch (err) {}
+      }
+      const storedStaff = localStorage.getItem('stayzen_staff');
+      if (storedStaff) {
+        try {
+          let parsedStaff = JSON.parse(storedStaff);
+          parsedStaff = parsedStaff.map((s: any) => s.id === id ? { ...s, status } : s);
+          localStorage.setItem('stayzen_staff', JSON.stringify(parsedStaff));
         } catch (err) {}
       }
     }
