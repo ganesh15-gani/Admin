@@ -72,12 +72,21 @@ export default function Sidebar({ isMobileOpen, setIsMobileOpen }: SidebarProps)
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
-      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-        <div className={cn("font-bold text-xl text-slate-800 transition-all duration-300 flex items-center overflow-hidden whitespace-nowrap", isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100")}>
-          <span className="text-brand-600">{formattedName.first}</span>{formattedName.second}
+      <div className="flex items-center justify-between h-20 px-4 border-b border-slate-200 bg-white shadow-sm">
+        <div className={cn("flex items-center space-x-3 transition-all duration-300 overflow-hidden whitespace-nowrap", isCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-100")}>
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 shadow-lg shadow-brand-500/30 flex items-center justify-center transform hover:scale-105 transition-transform">
+            <span className="text-white font-black text-xl tracking-tighter">SZ</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-lg text-slate-800 leading-tight">StayZen</span>
+            <span className="text-xs font-semibold tracking-wider text-brand-600 uppercase">Admin Portal</span>
+          </div>
         </div>
-        {!isCollapsed && <div className="hidden md:block w-8 h-8"></div> /* Spacer for logo centering */}
-        {isCollapsed && <span className="mx-auto font-bold text-brand-600 text-xl md:block hidden">{collapsedInitials}</span>}
+        {isCollapsed && (
+          <div className="mx-auto w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 shadow-md flex items-center justify-center hidden md:flex">
+            <span className="text-white font-black text-xl tracking-tighter">SZ</span>
+          </div>
+        )}
         
         {/* Mobile close button */}
         <button 

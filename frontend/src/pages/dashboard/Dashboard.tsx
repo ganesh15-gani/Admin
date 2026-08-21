@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, RefreshCw, Users, Home, Calendar, DollarSign, Store, Clock, LifeBuoy, AlertTriangle } from 'lucide-react';
+import { Download, RefreshCw, Users, Home, Calendar, DollarSign, Store, Clock, LifeBuoy, AlertTriangle, Megaphone, Target, TrendingUp, BarChart2, MousePointerClick } from 'lucide-react';
 import { dashboardService, type DashboardMetrics, type TimeFilter } from '../../services/dashboardService';
 import { authService } from '../../services/authService';
 import { settingsService } from '../../services/settingsService';
@@ -21,6 +21,7 @@ export default function Dashboard() {
   
   const { success, error } = useToast();
   const user = authService.getCurrentUser();
+  const isMarketing = user?.role === 'Marketing Team';
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -112,55 +113,113 @@ export default function Dashboard() {
 
       {/* KPI Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <StatCard 
-          title="Total Users" 
-          value={metrics ? metrics.totalUsers.toLocaleString() : '0'} 
-          trend={metrics?.trends.users}
-          icon={<Users size={20} />} 
-          loading={loading}
-        />
-        <StatCard 
-          title="Total Properties" 
-          value={metrics ? metrics.totalProperties.toLocaleString() : '0'} 
-          trend={metrics?.trends.properties}
-          icon={<Home size={20} />} 
-          loading={loading}
-          to="/properties"
-        />
-        <StatCard 
-          title="Active Bookings" 
-          value={metrics ? metrics.activeBookings.toLocaleString() : '0'} 
-          trend={metrics?.trends.bookings}
-          icon={<Calendar size={20} />} 
-          loading={loading}
-        />
-        <StatCard 
-          title="Total Revenue" 
-          value={metrics ? formatCurrency(metrics.totalRevenue) : '$0'} 
-          trend={metrics?.trends.revenue}
-          icon={<DollarSign size={20} />} 
-          loading={loading}
-        />
+        {isMarketing ? (
+          <>
+            <StatCard 
+              title="Active Campaigns" 
+              value="14" 
+              trend={12.5}
+              icon={<Megaphone size={20} />} 
+              loading={loading}
+            />
+            <StatCard 
+              title="Total Leads" 
+              value="1,842" 
+              trend={8.2}
+              icon={<Users size={20} />} 
+              loading={loading}
+            />
+            <StatCard 
+              title="Conversion Rate" 
+              value="4.8%" 
+              trend={-1.2}
+              icon={<Target size={20} />} 
+              loading={loading}
+            />
+            <StatCard 
+              title="Ad Spend" 
+              value={formatCurrency(4500)} 
+              trend={5.4}
+              icon={<DollarSign size={20} />} 
+              loading={loading}
+            />
+          </>
+        ) : (
+          <>
+            <StatCard 
+              title="Total Users" 
+              value={metrics ? metrics.totalUsers.toLocaleString() : '0'} 
+              trend={metrics?.trends.users}
+              icon={<Users size={20} />} 
+              loading={loading}
+            />
+            <StatCard 
+              title="Total Properties" 
+              value={metrics ? metrics.totalProperties.toLocaleString() : '0'} 
+              trend={metrics?.trends.properties}
+              icon={<Home size={20} />} 
+              loading={loading}
+              to="/properties"
+            />
+            <StatCard 
+              title="Active Bookings" 
+              value={metrics ? metrics.activeBookings.toLocaleString() : '0'} 
+              trend={metrics?.trends.bookings}
+              icon={<Calendar size={20} />} 
+              loading={loading}
+            />
+            <StatCard 
+              title="Total Revenue" 
+              value={metrics ? formatCurrency(metrics.totalRevenue) : '$0'} 
+              trend={metrics?.trends.revenue}
+              icon={<DollarSign size={20} />} 
+              loading={loading}
+            />
+          </>
+        )}
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
-          <Home size={20} className="text-brand-500" />
-          <span className="text-xs font-medium">Add Property</span>
-        </Button>
-        <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
-          <Users size={20} className="text-blue-500" />
-          <span className="text-xs font-medium">Manage Users</span>
-        </Button>
-        <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
-          <Calendar size={20} className="text-orange-500" />
-          <span className="text-xs font-medium">View Bookings</span>
-        </Button>
-        <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
-          <DollarSign size={20} className="text-purple-500" />
-          <span className="text-xs font-medium">Process Payouts</span>
-        </Button>
+        {isMarketing ? (
+          <>
+            <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
+              <Megaphone size={20} className="text-brand-500" />
+              <span className="text-xs font-medium">Create Campaign</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
+              <Download size={20} className="text-blue-500" />
+              <span className="text-xs font-medium">Export Leads</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
+              <BarChart2 size={20} className="text-orange-500" />
+              <span className="text-xs font-medium">View Analytics</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
+              <MousePointerClick size={20} className="text-purple-500" />
+              <span className="text-xs font-medium">Manage Ads</span>
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
+              <Home size={20} className="text-brand-500" />
+              <span className="text-xs font-medium">Add Property</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
+              <Users size={20} className="text-blue-500" />
+              <span className="text-xs font-medium">Manage Users</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
+              <Calendar size={20} className="text-orange-500" />
+              <span className="text-xs font-medium">View Bookings</span>
+            </Button>
+            <Button variant="outline" className="h-16 flex flex-col justify-center items-center gap-1 bg-white hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition-colors border-gray-100 shadow-sm rounded-xl">
+              <DollarSign size={20} className="text-purple-500" />
+              <span className="text-xs font-medium">Process Payouts</span>
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Analytics Area */}
@@ -168,7 +227,7 @@ export default function Dashboard() {
         <Card className="lg:col-span-2 border-gray-100 shadow-sm">
           <CardHeader className="border-b border-gray-50 pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle>Revenue Overview</CardTitle>
+              <CardTitle>{isMarketing ? "Campaign Engagement" : "Revenue Overview"}</CardTitle>
               <div className="flex items-center space-x-2 text-sm text-slate-500">
                 <span className="flex items-center"><div className="w-3 h-3 rounded-full bg-brand-500 mr-1"></div> {timeFilter}</span>
               </div>
@@ -189,10 +248,10 @@ export default function Dashboard() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b', fontWeight: 500 }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b', fontWeight: 500 }} tickFormatter={(val) => `$${val / 1000}k`} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b', fontWeight: 500 }} tickFormatter={(val) => isMarketing ? `${val}` : `$${val / 1000}k`} />
                     <Tooltip 
                       contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                      formatter={(value: any) => [formatCurrency(value), 'Revenue']}
+                      formatter={(value: any) => [isMarketing ? value.toLocaleString() : formatCurrency(value), isMarketing ? 'Engagement' : 'Revenue']}
                     />
                     <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
                   </AreaChart>
@@ -205,42 +264,65 @@ export default function Dashboard() {
         <div className="space-y-6">
           <Card className="border-gray-100 shadow-sm h-full flex flex-col">
             <CardHeader className="border-b border-gray-50 pb-4">
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle>{isMarketing ? "Recent Leads" : "Recent Activity"}</CardTitle>
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-hidden">
               <div className="divide-y divide-gray-50 h-[320px] overflow-y-auto">
-                <div className="p-4 flex gap-4 hover:bg-gray-50 transition-colors group cursor-pointer">
-                  <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-brand-500 ring-4 ring-brand-50 group-hover:ring-brand-100 transition-all"></div></div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">New Booking Confirmed</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Luxury Villa with Pool - $1,200</p>
-                    <p className="text-xs text-slate-400 mt-1">10 minutes ago</p>
-                  </div>
-                </div>
-                <div className="p-4 flex gap-4 hover:bg-gray-50 transition-colors group cursor-pointer">
-                  <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-blue-500 ring-4 ring-blue-50 group-hover:ring-blue-100 transition-all"></div></div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">New User Registered</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Sarah Jenkins created a host account</p>
-                    <p className="text-xs text-slate-400 mt-1">1 hour ago</p>
-                  </div>
-                </div>
-                <div className="p-4 flex gap-4 hover:bg-gray-50 transition-colors group cursor-pointer">
-                  <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-orange-500 ring-4 ring-orange-50 group-hover:ring-orange-100 transition-all"></div></div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">Property Needs Review</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Downtown Studio Apartment uploaded</p>
-                    <p className="text-xs text-slate-400 mt-1">2 hours ago</p>
-                  </div>
-                </div>
-                <div className="p-4 flex gap-4 hover:bg-gray-50 transition-colors group cursor-pointer">
-                  <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-red-500 ring-4 ring-red-50 group-hover:ring-red-100 transition-all"></div></div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">Refund Processed</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Booking #SZ10294 refunded ($450)</p>
-                    <p className="text-xs text-slate-400 mt-1">5 hours ago</p>
-                  </div>
-                </div>
+                {isMarketing ? (
+                  <>
+                    <div className="p-4 flex gap-4 hover:bg-gray-50 transition-colors group cursor-pointer">
+                      <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-brand-500 ring-4 ring-brand-50 group-hover:ring-brand-100 transition-all"></div></div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">New High-Value Lead</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Campaign: Summer Vacation Promo</p>
+                        <p className="text-xs text-slate-400 mt-1">2 minutes ago</p>
+                      </div>
+                    </div>
+                    <div className="p-4 flex gap-4 hover:bg-gray-50 transition-colors group cursor-pointer">
+                      <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-blue-500 ring-4 ring-blue-50 group-hover:ring-blue-100 transition-all"></div></div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">Ad Click Spike Detected</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Source: Instagram Ads</p>
+                        <p className="text-xs text-slate-400 mt-1">15 minutes ago</p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-4 flex gap-4 hover:bg-gray-50 transition-colors group cursor-pointer">
+                      <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-brand-500 ring-4 ring-brand-50 group-hover:ring-brand-100 transition-all"></div></div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">New Booking Confirmed</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Luxury Villa with Pool - $1,200</p>
+                        <p className="text-xs text-slate-400 mt-1">10 minutes ago</p>
+                      </div>
+                    </div>
+                    <div className="p-4 flex gap-4 hover:bg-gray-50 transition-colors group cursor-pointer">
+                      <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-blue-500 ring-4 ring-blue-50 group-hover:ring-blue-100 transition-all"></div></div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">New User Registered</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Sarah Jenkins created a host account</p>
+                        <p className="text-xs text-slate-400 mt-1">1 hour ago</p>
+                      </div>
+                    </div>
+                    <div className="p-4 flex gap-4 hover:bg-gray-50 transition-colors group cursor-pointer">
+                      <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-orange-500 ring-4 ring-orange-50 group-hover:ring-orange-100 transition-all"></div></div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">Property Needs Review</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Downtown Studio Apartment uploaded</p>
+                        <p className="text-xs text-slate-400 mt-1">2 hours ago</p>
+                      </div>
+                    </div>
+                    <div className="p-4 flex gap-4 hover:bg-gray-50 transition-colors group cursor-pointer">
+                      <div className="mt-0.5"><div className="w-2 h-2 rounded-full bg-red-500 ring-4 ring-red-50 group-hover:ring-red-100 transition-all"></div></div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">Refund Processed</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Booking #SZ10294 refunded ($450)</p>
+                        <p className="text-xs text-slate-400 mt-1">5 hours ago</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
