@@ -39,7 +39,9 @@ export const staffService = {
     try {
       const fetchPromise = fetchApi('/roles');
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
-      return await Promise.race([fetchPromise, timeoutPromise]) as StaffRole[];
+      const liveData = await Promise.race([fetchPromise, timeoutPromise]) as StaffRole[];
+      localStorage.setItem('stayzen_roles_v3', JSON.stringify(liveData));
+      return liveData;
     } catch (e) {
       const stored = localStorage.getItem('stayzen_roles_v3'); // bust cache again to ensure permissions array exists
       if (stored) return JSON.parse(stored);
@@ -52,7 +54,9 @@ export const staffService = {
     try {
       const fetchPromise = fetchApi('/staff');
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
-      return await Promise.race([fetchPromise, timeoutPromise]) as StaffMember[];
+      const liveData = await Promise.race([fetchPromise, timeoutPromise]) as StaffMember[];
+      localStorage.setItem('stayzen_staff_v2', JSON.stringify(liveData));
+      return liveData;
     } catch (e) {
       const stored = localStorage.getItem('stayzen_staff_v2'); // bust cache to sync with mock admins
       if (stored) return JSON.parse(stored);
