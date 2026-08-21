@@ -42,6 +42,16 @@ export const staffService = {
       const liveData = await Promise.race([fetchPromise, timeoutPromise]) as any[];
       // Standardize MongoDB _id to id
       const standardized = liveData.map(r => ({ ...r, id: r.id || r._id }));
+      
+      // Merge with local optimistic roles to prevent backend from wiping them if backend is read-only
+      const stored = localStorage.getItem('stayzen_roles_v3');
+      if (stored) {
+        const localRoles = JSON.parse(stored) as StaffRole[];
+        localRoles.forEach(lr => {
+          if (!standardized.find(r => r.name === lr.name)) standardized.push(lr);
+        });
+      }
+      
       localStorage.setItem('stayzen_roles_v3', JSON.stringify(standardized));
       return standardized;
     } catch (e) {
@@ -58,6 +68,24 @@ export const staffService = {
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
       const liveData = await Promise.race([fetchPromise, timeoutPromise]) as any[];
       const standardized = liveData.map(s => ({ ...s, id: s.id || s._id }));
+
+      // Merge with local optimistic staff to prevent backend from wiping them
+      const stored = localStorage.getItem('stayzen_staff_v2');
+      if (stored) {
+        const localStaff = JSON.parse(stored) as StaffMember[];
+        localStaff.forEach(ls => {
+          if (!standardized.find(s => s.email === ls.email)) standardized.push(ls);
+          else {
+            // Also preserve optimistic role changes
+            const match = standardized.find(s => s.email === ls.email);
+            if (match) {
+              match.roleId = ls.roleId;
+              match.customPermissions = ls.customPermissions;
+            }
+          }
+        });
+      }
+
       localStorage.setItem('stayzen_staff_v2', JSON.stringify(standardized));
       return standardized;
     } catch (e) {
