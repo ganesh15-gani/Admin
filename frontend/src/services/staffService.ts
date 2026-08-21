@@ -48,7 +48,14 @@ export const staffService = {
       if (stored) {
         const localRoles = JSON.parse(stored) as StaffRole[];
         localRoles.forEach(lr => {
-          if (!standardized.find(r => r.name === lr.name)) standardized.push(lr);
+          const match = standardized.find(r => r.name === lr.name);
+          if (!match) standardized.push(lr);
+          else {
+            // If backend stripped permissions, restore them from local cache
+            if (!match.permissions || match.permissions.length === 0) {
+              match.permissions = lr.permissions;
+            }
+          }
         });
       }
       
