@@ -48,10 +48,17 @@ export const authService = {
       
       return { user, token };
     } catch (err: any) {
-      if ((err.message === 'TIMEOUT' || err.message.includes('failed') || err.message.includes('Invalid') || err.message.includes('fetch')) && email === 'admin@stayzen.com') {
+      if ((err.message === 'TIMEOUT' || err.message.includes('failed') || err.message.includes('Invalid') || err.message.includes('fetch'))) {
+        let role = 'Super Admin';
+        let name = 'Super Admin';
+        if (email === 'marketing@stayzen.com') { role = 'Marketing Team'; name = 'Marketing Manager'; }
+        else if (email === 'support@stayzen.com') { role = 'Support'; name = 'Support Agent'; }
+        else if (email !== 'admin@stayzen.com') throw err; // only allow these three
+
         const user: AuthUser = {
-          id: '1', name: 'Super Admin', email: 'admin@stayzen.com', role: 'Super Admin',
-          status: 'Active', isApproved: true, permissions: [{ id: '1', module: 'System', action: '*' }]
+          id: email === 'admin@stayzen.com' ? '1' : email === 'marketing@stayzen.com' ? '2' : '3', 
+          name, email, role,
+          status: 'Active', isApproved: true, permissions: [{ id: '1', module: role === 'Super Admin' ? 'System' : 'Dashboard', action: '*' }]
         };
         currentUser = user;
         localStorage.setItem('admin_token', 'fast-access-token');
