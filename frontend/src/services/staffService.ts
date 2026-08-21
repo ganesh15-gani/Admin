@@ -41,9 +41,9 @@ export const staffService = {
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
       return await Promise.race([fetchPromise, timeoutPromise]) as StaffRole[];
     } catch (e) {
-      const stored = localStorage.getItem('stayzen_roles_v2'); // updated key to bust cache
+      const stored = localStorage.getItem('stayzen_roles_v3'); // bust cache again to ensure permissions array exists
       if (stored) return JSON.parse(stored);
-      localStorage.setItem('stayzen_roles_v2', JSON.stringify(mockRoles));
+      localStorage.setItem('stayzen_roles_v3', JSON.stringify(mockRoles));
       return mockRoles;
     }
   },

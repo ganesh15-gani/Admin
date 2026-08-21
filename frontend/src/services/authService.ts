@@ -55,7 +55,7 @@ export const authService = {
         
         // Load mock state to see if they updated it
         const storedStaff = localStorage.getItem('stayzen_staff');
-        const storedRoles = localStorage.getItem('stayzen_roles_v2') || localStorage.getItem('stayzen_roles');
+        const storedRoles = localStorage.getItem('stayzen_roles_v3') || localStorage.getItem('stayzen_roles_v2') || localStorage.getItem('stayzen_roles');
         let permissions: any[] = [{ id: '1', module: 'Dashboard', action: '*' }];
 
         if (email === 'admin@stayzen.com') { role = 'Super Admin'; name = 'Super Admin'; permissions = [{ id: '1', module: 'System', action: '*' }]; }
@@ -241,7 +241,7 @@ export const authService = {
     // For normal staff, we check local storage for their effective permissions
     // Since the system uses local mock state when backend is sleeping
     const storedStaff = localStorage.getItem('stayzen_staff');
-    const storedRoles = localStorage.getItem('stayzen_roles_v2') || localStorage.getItem('stayzen_roles');
+    const storedRoles = localStorage.getItem('stayzen_roles_v3') || localStorage.getItem('stayzen_roles_v2') || localStorage.getItem('stayzen_roles');
     
     if (storedStaff && storedRoles && user) {
       const staffList = JSON.parse(storedStaff);
