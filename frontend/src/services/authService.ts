@@ -41,6 +41,7 @@ export const authService = {
       if (!response.ok) throw new Error(data?.error || 'Login failed');
       
       const { user, token } = data;
+      user.id = user.id || user._id;
 
       currentUser = user;
       localStorage.setItem('admin_token', token);

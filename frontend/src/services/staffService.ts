@@ -39,9 +39,11 @@ export const staffService = {
     try {
       const fetchPromise = fetchApi('/roles');
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
-      const liveData = await Promise.race([fetchPromise, timeoutPromise]) as StaffRole[];
-      localStorage.setItem('stayzen_roles_v3', JSON.stringify(liveData));
-      return liveData;
+      const liveData = await Promise.race([fetchPromise, timeoutPromise]) as any[];
+      // Standardize MongoDB _id to id
+      const standardized = liveData.map(r => ({ ...r, id: r.id || r._id }));
+      localStorage.setItem('stayzen_roles_v3', JSON.stringify(standardized));
+      return standardized;
     } catch (e) {
       const stored = localStorage.getItem('stayzen_roles_v3'); // bust cache again to ensure permissions array exists
       if (stored) return JSON.parse(stored);
@@ -54,9 +56,10 @@ export const staffService = {
     try {
       const fetchPromise = fetchApi('/staff');
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
-      const liveData = await Promise.race([fetchPromise, timeoutPromise]) as StaffMember[];
-      localStorage.setItem('stayzen_staff_v2', JSON.stringify(liveData));
-      return liveData;
+      const liveData = await Promise.race([fetchPromise, timeoutPromise]) as any[];
+      const standardized = liveData.map(s => ({ ...s, id: s.id || s._id }));
+      localStorage.setItem('stayzen_staff_v2', JSON.stringify(standardized));
+      return standardized;
     } catch (e) {
       const stored = localStorage.getItem('stayzen_staff_v2'); // bust cache to sync with mock admins
       if (stored) return JSON.parse(stored);
