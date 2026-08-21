@@ -85,8 +85,21 @@ export const authService = {
                   const sRoles = JSON.parse(storedRoles);
                   const staffMember = sStaff.find((s: any) => s.email === email);
                   if (staffMember) {
-                    const r = sRoles.find((r: any) => r.id === staffMember.roleId);
-                    if (r) role = r.name;
+                    const r = sRoles.find((r: any) => String(r.id) === String(staffMember.roleId));
+                    if (r) {
+                      role = r.name;
+                      
+                      // Dynamically build the exact permissions array to ensure 100% sync
+                      let effective = new Set<string>(r.permissions || []);
+                      effective.add('Dashboard');
+                      if (staffMember.customPermissions) {
+                        Object.entries(staffMember.customPermissions).forEach(([m, isAllowed]) => {
+                          if (isAllowed) effective.add(m);
+                          else effective.delete(m);
+                        });
+                      }
+                      permissions = Array.from(effective).map((m, i) => ({ id: String(i), module: m, action: '*' }));
+                    }
                   }
                 }
               } else throw err;
@@ -238,7 +251,10 @@ export const authService = {
       if (staffMember) {
         // Safe match for both string and number IDs from legacy cache
         const role = rolesList.find((r: any) => String(r.id) === String(staffMember.roleId));
-        let effective = new Set<string>(role ? role.permissions : []);
+        
+        // Handle legacy roles that didn't have a permissions array
+        const rolePerms = (role && Array.isArray(role.permissions)) ? role.permissions : [];
+        let effective = new Set<string>(rolePerms);
         
         // Everyone in staff should at least see the Dashboard
         effective.add('Dashboard');
