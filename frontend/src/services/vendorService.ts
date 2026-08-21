@@ -20,7 +20,9 @@ export const vendorService = {
     try {
       const fetchPromise = fetchApi('/vendors');
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
-      return await Promise.race([fetchPromise, timeoutPromise]) as Vendor[];
+      const res = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      if (!res || !Array.isArray(res) || res.length === 0) throw new Error('EMPTY_DB');
+      return res as Vendor[];
     } catch (e) {
       console.warn('Vendor API failed, falling back to mock data');
       const baseVendors = [

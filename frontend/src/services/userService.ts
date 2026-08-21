@@ -6,7 +6,9 @@ export const userService = {
     try {
       const fetchPromise = fetchApi('/users');
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
-      return await Promise.race([fetchPromise, timeoutPromise]) as User[];
+      const res = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      if (!res || !Array.isArray(res) || res.length === 0) throw new Error('EMPTY_DB');
+      return res as User[];
     } catch (e) {
       console.warn('User API failed, falling back to mock data');
       const stored = localStorage.getItem('stayzen_mock_users');

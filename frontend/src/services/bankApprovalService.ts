@@ -19,7 +19,9 @@ export const bankApprovalService = {
     try {
       const fetchPromise = fetchApi('/bank-accounts');
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
-      return await Promise.race([fetchPromise, timeoutPromise]) as BankAccount[];
+      const res = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      if (!res || !Array.isArray(res) || res.length === 0) throw new Error('EMPTY_DB');
+      return res as BankAccount[];
     } catch (e) {
       console.warn('Bank Account API failed, falling back to mock data');
       const baseAccounts = [
@@ -33,7 +35,11 @@ export const bankApprovalService = {
       // Load from localStorage if available to persist between page loads
       const stored = localStorage.getItem('stayzen_mock_banks');
       if (stored) {
-        return JSON.parse(stored) as BankAccount[];
+        try {
+          return JSON.parse(stored) as BankAccount[];
+        } catch (parseError) {
+          localStorage.removeItem('stayzen_mock_banks');
+        }
       }
 
       const mockAccounts = [];
