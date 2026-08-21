@@ -28,10 +28,10 @@ const mockRoles: StaffRole[] = [
 ];
 
 const mockStaff: StaffMember[] = [
-  { id: 'staff-1', name: 'Alice Admin', email: 'alice@stayzen.com', department: 'Management', roleId: 'role-1', status: 'Active', customPermissions: null },
-  { id: 'staff-2', name: 'Bob Sales', email: 'bob@stayzen.com', department: 'Sales', roleId: 'role-2', status: 'Active', customPermissions: null },
-  { id: 'staff-3', name: 'Charlie Support', email: 'charlie@stayzen.com', department: 'Support', roleId: 'role-3', status: 'Active', customPermissions: { 'Properties': true } },
-  { id: 'staff-4', name: 'Dave Dev', email: 'dave@stayzen.com', department: 'Development', roleId: 'role-4', status: 'Active', customPermissions: { 'Sales': false } },
+  { id: 'staff-1', name: 'Super Admin', email: 'admin@stayzen.com', department: 'Management', roleId: 'role-1', status: 'Active', customPermissions: null },
+  { id: 'staff-2', name: 'Marketing Manager', email: 'marketing@stayzen.com', department: 'Marketing', roleId: 'role-5', status: 'Active', customPermissions: null },
+  { id: 'staff-3', name: 'Support Agent', email: 'support@stayzen.com', department: 'Support', roleId: 'role-3', status: 'Active', customPermissions: null },
+  { id: 'staff-4', name: 'New Hire', email: 'newhire@stayzen.com', department: 'General', roleId: 'role-4', status: 'Pending', customPermissions: null }
 ];
 
 export const staffService = {
@@ -54,9 +54,9 @@ export const staffService = {
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
       return await Promise.race([fetchPromise, timeoutPromise]) as StaffMember[];
     } catch (e) {
-      const stored = localStorage.getItem('stayzen_staff');
+      const stored = localStorage.getItem('stayzen_staff_v2'); // bust cache to sync with mock admins
       if (stored) return JSON.parse(stored);
-      localStorage.setItem('stayzen_staff', JSON.stringify(mockStaff));
+      localStorage.setItem('stayzen_staff_v2', JSON.stringify(mockStaff));
       return mockStaff;
     }
   },
@@ -68,11 +68,13 @@ export const staffService = {
         body: JSON.stringify({ roleId, customPermissions })
       });
     } catch (e) {
-      const stored = localStorage.getItem('stayzen_staff');
+      const stored = localStorage.getItem('stayzen_staff_v2') || localStorage.getItem('stayzen_staff');
       if (stored) {
-        const staff = JSON.parse(stored) as StaffMember[];
-        const updated = staff.map(s => s.id === staffId ? { ...s, roleId, customPermissions } : s);
-        localStorage.setItem('stayzen_staff', JSON.stringify(updated));
+        let staff = JSON.parse(stored);
+        staff = staff.map((s: any) => 
+          s.id === staffId ? { ...s, roleId, customPermissions } : s
+        );
+        localStorage.setItem('stayzen_staff_v2', JSON.stringify(staff));
       }
     }
   },

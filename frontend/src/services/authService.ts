@@ -54,7 +54,7 @@ export const authService = {
         let isApproved = true;
         
         // Load mock state to see if they updated it
-        const storedStaff = localStorage.getItem('stayzen_staff');
+        const storedStaff = localStorage.getItem('stayzen_staff_v2') || localStorage.getItem('stayzen_staff');
         const storedRoles = localStorage.getItem('stayzen_roles_v3') || localStorage.getItem('stayzen_roles_v2') || localStorage.getItem('stayzen_roles');
         let permissions: any[] = [{ id: '1', module: 'Dashboard', action: '*' }];
 
@@ -168,23 +168,23 @@ export const authService = {
       localStorage.setItem('stayzen_mock_admins', JSON.stringify(parsed));
 
       // Also add to staff list for permissions
-      const mockStaff = localStorage.getItem('stayzen_staff');
+      const mockStaff = localStorage.getItem('stayzen_staff_v2') || localStorage.getItem('stayzen_staff');
       let parsedStaff = [];
       if (mockStaff) { 
         try { parsedStaff = JSON.parse(mockStaff); } catch (e) {} 
       } else {
         parsedStaff = [
-          { id: 'staff-1', name: 'Alice Admin', email: 'alice@stayzen.com', department: 'Management', roleId: 'role-1', status: 'Active', customPermissions: null },
-          { id: 'staff-2', name: 'Bob Sales', email: 'bob@stayzen.com', department: 'Sales', roleId: 'role-2', status: 'Active', customPermissions: null },
-          { id: 'staff-3', name: 'Charlie Support', email: 'charlie@stayzen.com', department: 'Support', roleId: 'role-3', status: 'Active', customPermissions: { 'Properties': true } },
-          { id: 'staff-4', name: 'Dave Dev', email: 'dave@stayzen.com', department: 'Development', roleId: 'role-4', status: 'Active', customPermissions: { 'Sales': false } }
+          { id: 'staff-1', name: 'Super Admin', email: 'admin@stayzen.com', department: 'Management', roleId: 'role-1', status: 'Active', customPermissions: null },
+          { id: 'staff-2', name: 'Marketing Manager', email: 'marketing@stayzen.com', department: 'Marketing', roleId: 'role-5', status: 'Active', customPermissions: null },
+          { id: 'staff-3', name: 'Support Agent', email: 'support@stayzen.com', department: 'Support', roleId: 'role-3', status: 'Active', customPermissions: null },
+          { id: 'staff-4', name: 'New Hire', email: 'newhire@stayzen.com', department: 'General', roleId: 'role-4', status: 'Pending', customPermissions: null }
         ];
       }
       parsedStaff.push({
         id: newAdmin.id,
         name, email, department: 'General', roleId: 'role-4', status: 'Pending', customPermissions: null
       });
-      localStorage.setItem('stayzen_staff', JSON.stringify(parsedStaff));
+      localStorage.setItem('stayzen_staff_v2', JSON.stringify(parsedStaff));
       
       return { success: true, message: 'Account created' };
     }
@@ -249,7 +249,7 @@ export const authService = {
     
     // For normal staff, we check local storage for their effective permissions
     // Since the system uses local mock state when backend is sleeping
-    const storedStaff = localStorage.getItem('stayzen_staff');
+    const storedStaff = localStorage.getItem('stayzen_staff_v2') || localStorage.getItem('stayzen_staff');
     const storedRoles = localStorage.getItem('stayzen_roles_v3') || localStorage.getItem('stayzen_roles_v2') || localStorage.getItem('stayzen_roles');
     
     if (storedStaff && storedRoles && user) {

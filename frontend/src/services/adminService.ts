@@ -57,12 +57,12 @@ export const adminService = {
           localStorage.setItem('stayzen_mock_admins', JSON.stringify(parsed));
         } catch (err) {}
       }
-      const storedStaff = localStorage.getItem('stayzen_staff');
+      const storedStaff = localStorage.getItem('stayzen_staff_v2') || localStorage.getItem('stayzen_staff');
       if (storedStaff) {
         try {
           let parsedStaff = JSON.parse(storedStaff);
           parsedStaff = parsedStaff.map((s: any) => s.id === id ? { ...s, status } : s);
-          localStorage.setItem('stayzen_staff', JSON.stringify(parsedStaff));
+          localStorage.setItem('stayzen_staff_v2', JSON.stringify(parsedStaff));
         } catch (err) {}
       }
     }
