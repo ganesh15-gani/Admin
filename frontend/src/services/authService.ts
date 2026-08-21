@@ -145,7 +145,7 @@ export const authService = {
     // For normal staff, we check local storage for their effective permissions
     // Since the system uses local mock state when backend is sleeping
     const storedStaff = localStorage.getItem('stayzen_staff');
-    const storedRoles = localStorage.getItem('stayzen_roles');
+    const storedRoles = localStorage.getItem('stayzen_roles_v2') || localStorage.getItem('stayzen_roles');
     
     if (storedStaff && storedRoles && user) {
       const staffList = JSON.parse(storedStaff);

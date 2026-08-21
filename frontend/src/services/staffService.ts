@@ -20,7 +20,11 @@ const mockRoles: StaffRole[] = [
   { id: 'role-1', name: 'Super Admin', permissions: ['Dashboard', 'Users', 'Properties', 'Bookings', 'Payments', 'Vendors', 'Support', 'Notifications', 'Reports', 'CMS', 'Settings', 'System'] },
   { id: 'role-2', name: 'Sales Staff', permissions: ['Dashboard', 'Bookings', 'Vendors', 'Reports'] },
   { id: 'role-3', name: 'Support Staff', permissions: ['Dashboard', 'Users', 'Support', 'Notifications'] },
-  { id: 'role-4', name: 'Development', permissions: ['Dashboard', 'System', 'Reports'] }
+  { id: 'role-4', name: 'Development', permissions: ['Dashboard', 'System', 'Reports'] },
+  { id: 'role-5', name: 'Marketing Team', permissions: ['Dashboard', 'CMS', 'Reports', 'Notifications'] },
+  { id: 'role-6', name: 'Accounting / Finance', permissions: ['Dashboard', 'Payments', 'Reports'] },
+  { id: 'role-7', name: 'Property Manager', permissions: ['Dashboard', 'Properties', 'Bookings', 'Vendors', 'Notifications'] },
+  { id: 'role-8', name: 'HR / Admin', permissions: ['Dashboard', 'Users', 'Support'] }
 ];
 
 const mockStaff: StaffMember[] = [
@@ -37,9 +41,9 @@ export const staffService = {
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
       return await Promise.race([fetchPromise, timeoutPromise]) as StaffRole[];
     } catch (e) {
-      const stored = localStorage.getItem('stayzen_roles');
+      const stored = localStorage.getItem('stayzen_roles_v2'); // updated key to bust cache
       if (stored) return JSON.parse(stored);
-      localStorage.setItem('stayzen_roles', JSON.stringify(mockRoles));
+      localStorage.setItem('stayzen_roles_v2', JSON.stringify(mockRoles));
       return mockRoles;
     }
   },
@@ -82,7 +86,7 @@ export const staffService = {
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2000));
       return await Promise.race([fetchPromise, timeoutPromise]) as StaffRole;
     } catch (e) {
-      const stored = localStorage.getItem('stayzen_roles');
+      const stored = localStorage.getItem('stayzen_roles_v2');
       const roles = stored ? JSON.parse(stored) : [...mockRoles];
       const newRole: StaffRole = {
         id: `role-${Date.now()}`,
@@ -90,7 +94,7 @@ export const staffService = {
         permissions
       };
       roles.push(newRole);
-      localStorage.setItem('stayzen_roles', JSON.stringify(roles));
+      localStorage.setItem('stayzen_roles_v2', JSON.stringify(roles));
       return newRole;
     }
   },
@@ -99,11 +103,11 @@ export const staffService = {
     try {
       await fetchApi(`/roles/${roleId}`, { method: 'DELETE' });
     } catch (e) {
-      const stored = localStorage.getItem('stayzen_roles');
+      const stored = localStorage.getItem('stayzen_roles_v2');
       if (stored) {
         const roles = JSON.parse(stored) as StaffRole[];
         const updated = roles.filter(r => r.id !== roleId);
-        localStorage.setItem('stayzen_roles', JSON.stringify(updated));
+        localStorage.setItem('stayzen_roles_v2', JSON.stringify(updated));
       }
     }
   },
