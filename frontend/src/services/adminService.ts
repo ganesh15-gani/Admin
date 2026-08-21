@@ -46,6 +46,14 @@ export const adminService = {
       await fetchApi(`/admins/${id}/status`, { method: 'PUT', body: JSON.stringify({ status, isApproved }) });
     } catch (e) {
       console.warn('Mocking updateStatus');
+      const stored = localStorage.getItem('stayzen_mock_admins');
+      if (stored) {
+        try {
+          let parsed = JSON.parse(stored);
+          parsed = parsed.map((a: any) => a.id === id ? { ...a, status, isApproved } : a);
+          localStorage.setItem('stayzen_mock_admins', JSON.stringify(parsed));
+        } catch (err) {}
+      }
     }
   },
 
